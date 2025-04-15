@@ -1,7 +1,7 @@
 {
   "name": "@datataki/sdk",
   "license": "MIT",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "main": "./dist/cjs/public-api.js",
   "module": "./dist/esm/public-api.js",
   "types": "./dist/esm/public-api.d.ts",
