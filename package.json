@@ -1,5 +1,6 @@
 {
   "name": "@datataki/sdk",
+  "version": "1.0.1",
   "license": "MIT",
   "description": "A lightweight client-side event tracking library for modern web applications. Track user sessions, page views, interactions and custom events with minimal setup.",
   "keywords": [
@@ -9,7 +10,6 @@
     "frontend",
     "monitoring"
   ],
-  "version": "1.0.1",
   "main": "./dist/cjs/public-api.js",
   "module": "./dist/esm/public-api.js",
   "types": "./dist/esm/public-api.d.ts",
@@ -22,6 +22,10 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nacorga/datataki.git"
   },
   "scripts": {
     "build": "npx tsc",
