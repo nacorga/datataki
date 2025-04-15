@@ -1,6 +1,14 @@
 {
   "name": "@datataki/sdk",
   "license": "MIT",
+  "description": "A lightweight client-side event tracking library for modern web applications. Track user sessions, page views, interactions and custom events with minimal setup.",
+  "keywords": [
+    "analytics",
+    "tracking",
+    "event-tracker",
+    "frontend",
+    "monitoring"
+  ],
   "version": "1.0.0",
   "main": "./dist/cjs/public-api.js",
   "module": "./dist/esm/public-api.js",
