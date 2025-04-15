@@ -1,0 +1,34 @@
+{
+  "name": "@datataki/sdk",
+  "license": "MIT",
+  "version": "0.0.0",
+  "main": "./dist/cjs/public-api.js",
+  "module": "./dist/esm/public-api.js",
+  "types": "./dist/esm/public-api.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    "import": "./dist/esm/public-api.js",
+    "require": "./dist/cjs/public-api.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "npx tsc",
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build:all": "npm run build:esm && npm run build:cjs",
+    "build-ugly": "npm run build:all && find dist -name '*.js' -exec npx uglify-js {} -o {} --compress --mangle --toplevel \\;",
+    "build-ugly:win": "npm run build:all && Get-ChildItem -Path dist -Recurse -Filter *.js | ForEach-Object { npx uglify-js $_.FullName -o $_.FullName --compress --mangle --toplevel }",
+    "release": "standard-version",
+    "format": "prettier --config ./.prettierrc --write \"src/**/*.ts\""
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "standard-version": "^9.5.0",
+    "typescript": "^5.7.3",
+    "uglify-js": "^3.19.3"
+  }
+}

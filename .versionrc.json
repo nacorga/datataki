@@ -1,0 +1,22 @@
+{
+  "bumpFiles": [
+    "package.json",
+    "package-lock.json"
+  ],
+  "skip": {
+    "tag": false,
+    "commit": false,
+    "changelog": false
+  },
+  "types": [
+    { "type": "feat", "release": "minor", "section": "✨ Features" },
+    { "type": "fix", "release": "patch", "section": "🐛 Bug Fixes" },
+    { "type": "style", "release": "patch", "section": "🎨 Style" },
+    { "type": "docs", "release": "patch", "section": "📄 Docs (Documentation)" },
+    { "type": "chore", "release": "patch", "section": "🧹 Chore (Routine tasks, maintenance)" },
+    { "type": "refactor", "release": "patch", "section": "🔨 Refactor (Code restructuring)" },
+    { "type": "perf", "release": "patch", "section": "⚡ Perf (Performance improvements)" },
+    { "type": "test", "release": "patch", "section": "🧪 Test (Testing)" },
+    { "type": "ci", "release": "patch", "section": "🔄 CI (Continuous Integration)" }
+  ]
+}
