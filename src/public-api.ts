@@ -15,6 +15,10 @@ export const startTracking = (apiUrl: string, config?: DatatakiConfig): void => 
     return;
   }
 
+  if (config?.sessionTimeout && config.sessionTimeout < 30_000) {
+    throw new Error('Tracelog config error: Invalid sessionTimeout (must be bigger or equal to 30s).');
+  }
+
   trackingInstance = new Tracking(apiUrl, config);
 };
 

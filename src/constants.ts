@@ -28,5 +28,5 @@ export const MAX_CUSTOM_EVENT_ARRAY_SIZE = 12;
 export const DEFAULT_TRACKING_CONFIG: Omit<DatatakiConfig, 'apiUrl'> = {
   debug: false,
   realTime: false,
-  sessionTimeout: 30_000,
+  sessionTimeout: 60_000 * 15,
 };

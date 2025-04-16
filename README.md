@@ -2,6 +2,8 @@
 
 A lightweight client-side event tracking library for web applications. Track user sessions, page views, interactions and custom events with minimal setup.
 
+![Cover](./assets/cover.png)
+
 ## Features
 
 - 🔄 Automatic session tracking
@@ -31,7 +33,7 @@ import { startTracking, sendCustomEvent } from '@datataki/sdk';
 startTracking('YOUR_API_URL', {
   debug: false,
   realTime: false,
-  sessionTimeout: 30000
+  sessionTimeout: 300000
 });
 
 // Send custom event
@@ -49,9 +51,9 @@ The `startTracking` function accepts these configuration options:
 
 ```javascript
 interface DatatakiConfig {
-  debug?: boolean;        // Enable console logging
-  realTime?: boolean;     // Enable real-time event dispatching
-  sessionTimeout?: number; // Inactivity timeout in ms (default: 30000)
+  debug?: boolean; // Enable console logging
+  realTime?: boolean; // Enable real-time event dispatching
+  sessionTimeout?: number; // Inactivity timeout in ms (default: 15m)
 }
 ```
 
