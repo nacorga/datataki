@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### 1.0.3 (2025-04-16)
+
+
+### 🔨 Refactor (Code restructuring)
+
+* upgrade sessionTimeout ([1956b81](https://github.com/nacorga/datataki/commit/1956b811654c14b25cc947e99babe372e4e64850))
+
 ### 1.0.2 (2025-04-15)
 
 
