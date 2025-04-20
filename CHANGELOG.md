@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### 1.0.4 (2025-04-20)
+
+
+### 🧹 Chore (Routine tasks, maintenance)
+
+* exclude test files ([17f7da9](https://github.com/nacorga/datataki/commit/17f7da9d4ad1d5c174df0bcc655944014545b16d))
+
 ### 1.0.3 (2025-04-16)
 
 
