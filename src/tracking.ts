@@ -296,18 +296,18 @@ export class Tracking {
   }
 
   private sendEvent(payload: DatatakiEvent) {
+    if (this.config.debug) {
+      console.log(payload);
+    }
+
+    if (this.config.realTime) {
+      window.dispatchEvent(new CustomEvent(DispatchEventKey.Event, { detail: { event: payload } }));
+    }
+
     this.eventsQueue.push(payload);
 
     if (!this.hasInitEventsQueueInterval) {
       this.initEventsQueueInterval();
-    }
-
-    if (this.config.debug) {
-      console.log(payload);
-
-      if (this.config.realTime) {
-        window.dispatchEvent(new CustomEvent(DispatchEventKey.Event, { detail: { event: payload } }));
-      }
     }
 
     if (payload.type === EventType.SESSION_END && this.eventsQueue.length) {
