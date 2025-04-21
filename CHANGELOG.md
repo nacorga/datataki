@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### 1.0.5 (2025-04-21)
+
+
+### 🔨 Refactor (Code restructuring)
+
+* improved real-time event handling and debugging ([919edfe](https://github.com/nacorga/datataki/commit/919edfe1bd34031504307cca467f6ab532f50673))
+
 ### 1.0.4 (2025-04-20)
 
 
