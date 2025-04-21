@@ -326,6 +326,18 @@ export class Tracking {
   }
 
   private sendEventsQueue() {
+    const uniqueEvents = this.eventsQueue.reduce((acc: DatatakiEvent[], current) => {
+      const isDuplicate = acc.some(({ timestamp, type }) => timestamp === current.timestamp && type === current.type);
+
+      if (!isDuplicate) {
+        acc.push(current);
+      }
+
+      return acc;
+    }, []);
+
+    this.eventsQueue = uniqueEvents;
+
     const body: DatatakiQueue = {
       user_id: this.userId,
       events: this.eventsQueue,
