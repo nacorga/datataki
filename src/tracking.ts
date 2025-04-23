@@ -1,5 +1,4 @@
 import {
-  CLICK_DEBOUNCE_TIME,
   DEFAULT_TRACKING_CONFIG,
   DeviceType,
   DispatchEventKey,
@@ -37,6 +36,7 @@ export class Tracking {
   private hasInitEventsQueueInterval: boolean = false;
   private eventsQueueIntervalId: number | null = null;
   private device: DeviceType;
+  private suppressNextScroll = false;
 
   constructor(apiUrl: string, config: DatatakiConfig = {}) {
     this.apiUrl = apiUrl;
@@ -164,6 +164,12 @@ export class Tracking {
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
     const handleScroll = () => {
+      if (this.suppressNextScroll) {
+        this.suppressNextScroll = false;
+
+        return;
+      }
+
       if (debounceTimer) clearTimeout(debounceTimer);
 
       debounceTimer = setTimeout(() => {
@@ -191,66 +197,49 @@ export class Tracking {
   }
 
   private initClickTracking() {
-    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-
     const handleClick = (event: MouseEvent) => {
-      const pageUrl = window.location.href;
+      const clickedElement = event.target as HTMLElement;
 
-      if (debounceTimer) clearTimeout(debounceTimer);
+      if (!clickedElement) return;
 
-      debounceTimer = setTimeout(() => {
-        const clickedElement = event.target as HTMLElement;
+      let htmlElRef: HTMLElement = clickedElement;
+      let hasDataAttr = clickedElement.hasAttribute(`${HTML_DATA_ATTR_PREFIX}-name`);
 
-        if (!clickedElement) return;
+      if (!hasDataAttr) {
+        const closest = clickedElement.closest(`[${HTML_DATA_ATTR_PREFIX}-name]`) as HTMLElement;
 
-        let htmlElRef: HTMLElement = clickedElement;
-        let hasDataAttr = clickedElement.hasAttribute(`${HTML_DATA_ATTR_PREFIX}-name`);
-
-        if (!hasDataAttr) {
-          const closestClickedElementWithDataAttr = clickedElement.closest(
-            `[${HTML_DATA_ATTR_PREFIX}-name]`,
-          ) as HTMLElement;
-
-          if (closestClickedElementWithDataAttr) {
-            htmlElRef = closestClickedElementWithDataAttr;
-            hasDataAttr = true;
-          }
+        if (closest) {
+          htmlElRef = closest;
+          hasDataAttr = true;
         }
+      }
 
-        let attrData: DatatakiEventClickAttrData | undefined;
+      let attrData: DatatakiEventClickAttrData | undefined;
 
-        if (hasDataAttr) {
-          const attrName = htmlElRef.getAttribute(`${HTML_DATA_ATTR_PREFIX}-name`);
-          const attrValue = htmlElRef.getAttribute(`${HTML_DATA_ATTR_PREFIX}-value`);
+      if (hasDataAttr) {
+        const name = htmlElRef.getAttribute(`${HTML_DATA_ATTR_PREFIX}-name`)!;
+        const value = htmlElRef.getAttribute(`${HTML_DATA_ATTR_PREFIX}-value`);
 
-          if (attrName) {
-            attrData = {
-              name: attrName,
-              ...(attrValue && { value: attrValue }),
-            };
-          }
-        }
+        attrData = { name, ...(value && { value }) };
+      }
 
-        const clickData: DatatakiEventClickData = {
-          element: htmlElRef.tagName.toLowerCase(),
-          x: event.clientX,
-          y: event.clientY,
-          ...(htmlElRef.id && { id: htmlElRef.id }),
-          ...(htmlElRef.className && { class: htmlElRef.className }),
-          ...(attrData && { attrData }),
-        };
+      const clickData: DatatakiEventClickData = {
+        element: htmlElRef.tagName.toLowerCase(),
+        x: event.clientX,
+        y: event.clientY,
+        ...(htmlElRef.id && { id: htmlElRef.id }),
+        ...(htmlElRef.className && { class: htmlElRef.className }),
+        ...(attrData && { attrData }),
+      };
 
-        this.handleEvent({
-          evType: EventType.CLICK,
-          url: pageUrl,
-          clickData,
-        });
-
-        debounceTimer = null;
-      }, CLICK_DEBOUNCE_TIME);
+      this.handleEvent({
+        evType: EventType.CLICK,
+        url: window.location.href,
+        clickData,
+      });
     };
 
-    window.addEventListener('click', handleClick);
+    window.addEventListener('click', handleClick, true);
   }
 
   private handleEvent({ evType, url, fromUrl, scrollData, clickData, customEvent }: DatatakiEventHandler) {
@@ -356,6 +345,12 @@ export class Tracking {
       evType: EventType.PAGE_VIEW,
       fromUrl,
     });
+
+    this.suppressNextScroll = true;
+
+    setTimeout(() => {
+      this.suppressNextScroll = false;
+    }, SCROLL_DEBOUNCE_TIME + 10);
   }
 
   private handleHistoryStateChange(method: any) {
