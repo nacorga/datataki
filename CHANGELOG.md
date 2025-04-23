@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### 1.0.6 (2025-04-23)
+
+
+### 🔨 Refactor (Code restructuring)
+
+* adjust debounce times for clicks and scrolling ([88c23e6](https://github.com/nacorga/datataki/commit/88c23e6120a9ffedc439f6d125e6ab8871d7b355))
+
 ### 1.0.5 (2025-04-21)
 
 
