@@ -4,9 +4,9 @@ import {
   MAX_CUSTOM_EVENT_NAME_LENGTH,
   MAX_CUSTOM_EVENT_STRING_SIZE,
 } from '../constants';
-import { DatatakiEventCustomMetadataType } from '../types';
+import { MetadataType } from '../types';
 
-const isOnlyPrimitiveFields = (obj: Record<string, any>): obj is Record<string, DatatakiEventCustomMetadataType> => {
+const isOnlyPrimitiveFields = (obj: Record<string, any>): obj is Record<string, MetadataType> => {
   if (typeof obj !== 'object' || obj === null) {
     return false;
   }

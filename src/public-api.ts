@@ -1,5 +1,5 @@
 import { Tracking } from './tracking';
-import { DatatakiConfig, DatatakiEventCustomMetadataType } from './types';
+import { DatatakiConfig, MetadataType } from './types';
 
 export * from './types';
 export { DispatchEventKey, DeviceType } from './constants';
@@ -19,10 +19,14 @@ export const startTracking = (apiUrl: string, config?: DatatakiConfig): void => 
     throw new Error('Tracelog config error: Invalid sessionTimeout (must be bigger or equal to 30s).');
   }
 
+  if (config?.samplingRate && (config.samplingRate < 0 || config.samplingRate > 1)) {
+    throw new Error('Tracelog config error: Invalid samplingRate (must be a number between 0 and 1).');
+  }
+
   trackingInstance = new Tracking(apiUrl, config);
 };
 
-export const sendCustomEvent = (name: string, metadata?: Record<string, DatatakiEventCustomMetadataType>): void => {
+export const sendCustomEvent = (name: string, metadata?: Record<string, MetadataType>): void => {
   if (!trackingInstance) {
     throw new Error('Tracking not initialized. Call startTracking() first.');
   }

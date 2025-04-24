@@ -32,8 +32,14 @@ import { startTracking, sendCustomEvent } from '@datataki/sdk';
 // Initialize tracking
 startTracking('YOUR_API_URL', {
   debug: false,
-  realTime: false,
-  sessionTimeout: 300000
+  realTime: true,
+  sessionTimeout: 1800000,
+  excludeRoutes: [/^\/admin/, '/login'],
+  samplingRate: 0.5,
+  globalMetadata: {
+    appVersion: '1.0.1',
+    environment: 'production',
+  },
 });
 
 // Send custom event
@@ -54,8 +60,13 @@ interface DatatakiConfig {
   debug?: boolean; // Enable console logging
   realTime?: boolean; // Enable real-time event dispatching
   sessionTimeout?: number; // Inactivity timeout in ms (default: 15m)
+  samplingRate?: number; // Allow to track only a percentage of users (default 100%)
+  excludeRoutes?: Array<string | RegExp>; // List of routes (exact string or RegExp) on which we do NOT want to trace
+  globalMetadata?: Record<string, string | number | boolean | string[]>; // Include global metadata to be sent with all events
 }
 ```
+
+* `excludeRoutes` only will ignore **scroll** events and **click** events without _data-taki-*_ attribute.
 
 ## Automatic Events
 
@@ -211,8 +222,8 @@ sendCustomEvent('button_click', {
 // Bad ❌
 sendCustomEvent('form_submit', {
   email: 'user@email.com', // No PII!
-  name: 'John Doe',        // No PII!
-  userId: '12345'          // No PII!
+  name: 'John Doe', // No PII!
+  userId: '12345' // No PII!
 });
 ```
 
