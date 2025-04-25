@@ -1,5 +1,5 @@
 import { Tracking } from './tracking';
-import { EventType, DatatakiEventCustomMetadataType } from './types';
+import { EventType, MetadataType } from './types';
 import { EVENT_SENT_INTERVAL } from './constants';
 
 const mockLocalStorage = {
@@ -117,7 +117,7 @@ describe('Tracking', () => {
     it('should handle invalid custom event', () => {
       const consoleErrorSpy = jest.spyOn(console, 'error');
       const invalidMetadata = {
-        invalidProp: { nested: 'object' } as unknown as DatatakiEventCustomMetadataType,
+        invalidProp: { nested: 'object' } as unknown as MetadataType,
       };
 
       tracking.sendCustomEvent('', invalidMetadata);

@@ -17,11 +17,11 @@ import {
   DatatakiEventClickAttrData,
   DatatakiEventClickData,
   DatatakiEventHandler,
-  DatatakiEventCustomMetadataType,
+  MetadataType,
   DatatakiEventUtm,
 } from './types';
 import { getDeviceType } from './utils/device-detector';
-import { isEventValid } from './utils/event-check';
+import { isEventValid, isValidMetadata } from './utils/event-check';
 
 export class Tracking {
   private apiUrl: string;
@@ -48,29 +48,33 @@ export class Tracking {
     this.init();
   }
 
-  sendCustomEvent(name: string, metadata?: Record<string, DatatakiEventCustomMetadataType>) {
+  sendCustomEvent(name: string, metadata?: Record<string, MetadataType>) {
     const { valid, error } = isEventValid(name, metadata);
 
-    if (valid) {
-      try {
-        this.handleEvent({
-          evType: EventType.CUSTOM,
-          customEvent: {
-            name,
-            ...(metadata && { metadata }),
-          },
-        });
-      } catch (err) {
-        if (this.config.debug) {
-          console.error(`Invalid custom event: ${(err as Error).message}`);
-        }
-      }
-    } else if (this.config.debug) {
-      const message =
-        error ||
-        `sendCustomEvent "${name}" data object validation failed. Please, review your event data and try again.`;
+    if (!valid) {
+      if (this.config.debug) {
+        const message =
+          error ||
+          `sendCustomEvent "${name}" metadata error: data object validation failed. Please, review your event data and try again.`;
 
-      console.error(`Invalid custom event: ${message}`);
+        console.error(`Invalid custom event: ${message}`);
+      }
+
+      return;
+    }
+
+    try {
+      this.handleEvent({
+        evType: EventType.CUSTOM,
+        customEvent: {
+          name,
+          ...(metadata && { metadata }),
+        },
+      });
+    } catch (err) {
+      if (this.config.debug) {
+        console.error(`Invalid custom event: ${(err as Error).message}`);
+      }
     }
   }
 
@@ -241,8 +245,34 @@ export class Tracking {
 
     window.addEventListener('click', handleClick, true);
   }
-
   private handleEvent({ evType, url, fromUrl, scrollData, clickData, customEvent }: DatatakiEventHandler) {
+    if (Object.keys(this.config.globalMetadata || {}).length) {
+      const { valid, error } = isValidMetadata('globalMetadata', this.config.globalMetadata || {});
+
+      if (!valid) {
+        if (this.config.debug) {
+          const message =
+            error ||
+            'globalMetadata metadata error: data object validation failed. Please, review your event data and try again.';
+
+          console.error(`Invalid custom event: ${message}`);
+        }
+
+        return;
+      }
+    }
+
+    if (!this.isSampledUser()) {
+      return;
+    }
+
+    const isScrollEvent = evType === EventType.SCROLL;
+    const isClickEventWithAttrData = evType === EventType.CLICK && clickData?.attrData?.name;
+
+    if (this.isRouteExcluded() && (isScrollEvent || !isClickEventWithAttrData)) {
+      return;
+    }
+
     let errorMessage: string | null = null;
 
     if (evType === EventType.SCROLL && !scrollData) {
@@ -268,6 +298,7 @@ export class Tracking {
     const isFirstEvent = evType === EventType.SESSION_START;
 
     const payload: DatatakiEvent = {
+      ...this.config.globalMetadata,
       type: evType,
       session_id: this.sessionId,
       page_url: url || this.pageUrl,
@@ -381,6 +412,28 @@ export class Tracking {
     const blob = new Blob([JSON.stringify(body)], { type: 'application/json' });
 
     return navigator.sendBeacon(this.apiUrl, blob);
+  }
+
+  private isSampledUser(): boolean {
+    if (this.config.samplingRate === 1) {
+      return true;
+    }
+
+    const userIdHash = parseInt(this.userId.slice(-6), 16) / 0xffffff;
+
+    return userIdHash < (this.config.samplingRate || 1);
+  }
+
+  private isRouteExcluded(): boolean {
+    if (!this.config.excludeRoutes?.length) {
+      return false;
+    }
+
+    const path = new URL(this.pageUrl, window.location.origin).pathname;
+
+    return this.config.excludeRoutes.some((pattern) =>
+      pattern instanceof RegExp ? pattern.test(path) : pattern === path,
+    );
   }
 
   private getUserId(): string {

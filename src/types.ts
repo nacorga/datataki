@@ -1,6 +1,6 @@
 import { DeviceType } from './constants';
 
-export type DatatakiEventCustomMetadataType = string | number | boolean | string[];
+export type MetadataType = string | number | boolean | string[];
 
 export enum EventType {
   SESSION_START = 'session_start',
@@ -20,6 +20,9 @@ export type DatatakiConfig = {
   debug?: boolean;
   realTime?: boolean;
   sessionTimeout?: number;
+  excludeRoutes?: Array<string | RegExp>;
+  samplingRate?: number;
+  globalMetadata?: Record<string, MetadataType>;
 };
 
 export type DatatakiEventHandler = {
@@ -33,7 +36,7 @@ export type DatatakiEventHandler = {
 
 export type DatatakiEventCustom = {
   name: string;
-  metadata?: Record<string, DatatakiEventCustomMetadataType>;
+  metadata?: Record<string, MetadataType>;
 };
 
 export type DatatakiEventScrollData = {

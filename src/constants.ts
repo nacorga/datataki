@@ -28,4 +28,7 @@ export const DEFAULT_TRACKING_CONFIG: Omit<DatatakiConfig, 'apiUrl'> = {
   debug: false,
   realTime: false,
   sessionTimeout: 60_000 * 15,
+  excludeRoutes: [],
+  samplingRate: 1,
+  globalMetadata: {},
 };
