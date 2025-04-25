@@ -48,10 +48,20 @@ export const isEventValid = (evName: string, metadata?: Record<string, any>): { 
     };
   }
 
+  return isValidMetadata(evName, metadata, 'sendCustomEvent');
+};
+
+export const isValidMetadata = (
+  evName: string,
+  metadata: Record<string, any>,
+  type?: string,
+): { valid: boolean; error?: string } => {
+  const intro = type && type === 'sendCustomEvent' ? `${type} "${evName}" metadata error` : `${evName} metadata error`;
+
   if (!isOnlyPrimitiveFields(metadata)) {
     return {
       valid: false,
-      error: `sendCustomEvent "${evName}" metadata object has invalid types. Valid types are string, number, boolean or strings lists.`,
+      error: `${intro}: object has invalid types. Valid types are string, number, boolean or strings lists.`,
     };
   }
 
@@ -62,28 +72,28 @@ export const isEventValid = (evName: string, metadata?: Record<string, any>): { 
   } catch (e) {
     return {
       valid: false,
-      error: `sendCustomEvent "${evName}" metadata object contains circular references.`,
+      error: `${intro}: object contains circular references.`,
     };
   }
 
   if (jsonString.length > MAX_CUSTOM_EVENT_STRING_SIZE) {
     return {
       valid: false,
-      error: `sendCustomEvent "${evName}" metadata object is too large (max ${MAX_CUSTOM_EVENT_STRING_SIZE / 1024} KB).`,
+      error: `${intro}: object is too large (max ${MAX_CUSTOM_EVENT_STRING_SIZE / 1024} KB).`,
     };
   }
 
   if (Object.keys(metadata).length > MAX_CUSTOM_EVENT_KEYS) {
     return {
       valid: false,
-      error: `sendCustomEvent "${evName}" metadata object has too many keys (max ${MAX_CUSTOM_EVENT_KEYS} keys).`,
+      error: `${intro}: object has too many keys (max ${MAX_CUSTOM_EVENT_KEYS} keys).`,
     };
   }
 
   if (Object.values(metadata).some((value) => Array.isArray(value) && value.length > MAX_CUSTOM_EVENT_ARRAY_SIZE)) {
     return {
       valid: false,
-      error: `sendCustomEvent "${evName}" metadata object has a too large array prop (max ${MAX_CUSTOM_EVENT_ARRAY_SIZE} length).`,
+      error: `${intro}: object has a too large array prop (max ${MAX_CUSTOM_EVENT_ARRAY_SIZE} length).`,
     };
   }
 

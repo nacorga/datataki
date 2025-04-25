@@ -21,7 +21,7 @@ import {
   DatatakiEventUtm,
 } from './types';
 import { getDeviceType } from './utils/device-detector';
-import { isEventValid } from './utils/event-check';
+import { isEventValid, isValidMetadata } from './utils/event-check';
 
 export class Tracking {
   private apiUrl: string;
@@ -51,26 +51,30 @@ export class Tracking {
   sendCustomEvent(name: string, metadata?: Record<string, MetadataType>) {
     const { valid, error } = isEventValid(name, metadata);
 
-    if (valid) {
-      try {
-        this.handleEvent({
-          evType: EventType.CUSTOM,
-          customEvent: {
-            name,
-            ...(metadata && { metadata }),
-          },
-        });
-      } catch (err) {
-        if (this.config.debug) {
-          console.error(`Invalid custom event: ${(err as Error).message}`);
-        }
-      }
-    } else if (this.config.debug) {
-      const message =
-        error ||
-        `sendCustomEvent "${name}" data object validation failed. Please, review your event data and try again.`;
+    if (!valid) {
+      if (this.config.debug) {
+        const message =
+          error ||
+          `sendCustomEvent "${name}" metadata error: data object validation failed. Please, review your event data and try again.`;
 
-      console.error(`Invalid custom event: ${message}`);
+        console.error(`Invalid custom event: ${message}`);
+      }
+
+      return;
+    }
+
+    try {
+      this.handleEvent({
+        evType: EventType.CUSTOM,
+        customEvent: {
+          name,
+          ...(metadata && { metadata }),
+        },
+      });
+    } catch (err) {
+      if (this.config.debug) {
+        console.error(`Invalid custom event: ${(err as Error).message}`);
+      }
     }
   }
 
@@ -241,8 +245,23 @@ export class Tracking {
 
     window.addEventListener('click', handleClick, true);
   }
-
   private handleEvent({ evType, url, fromUrl, scrollData, clickData, customEvent }: DatatakiEventHandler) {
+    if (Object.keys(this.config.globalMetadata || {}).length) {
+      const { valid, error } = isValidMetadata('globalMetadata', this.config.globalMetadata || {});
+
+      if (!valid) {
+        if (this.config.debug) {
+          const message =
+            error ||
+            'globalMetadata metadata error: data object validation failed. Please, review your event data and try again.';
+
+          console.error(`Invalid custom event: ${message}`);
+        }
+
+        return;
+      }
+    }
+
     if (!this.isSampledUser()) {
       return;
     }
