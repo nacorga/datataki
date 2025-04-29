@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## 1.1.0 (2025-04-29)
+
+
+### ✨ Features
+
+* implement batch processing for event tracking and update README with new payload structure ([cb8fffa](https://github.com/nacorga/datataki/commit/cb8fffa69569b18c52f3f2de56465a36b5947bfb))
+
 ### 1.0.7 (2025-04-25)
 
 ### 1.0.6 (2025-04-23)
