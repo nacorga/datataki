@@ -187,10 +187,15 @@ Example of a batch payload:
   "device": "desktop",
   "events": [
     {
+      "type": "session_start",
+      "page_url": "https://example.com/products",
+      "timestamp": 1678901234566,
+      "referrer": "https://google.com"
+    },
+    {
       "type": "page_view",
       "page_url": "https://example.com/products",
-      "timestamp": 1678901234567,
-      "referrer": "https://google.com"
+      "timestamp": 1678901234567
     },
     {
       "type": "click",
