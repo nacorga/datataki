@@ -19,7 +19,7 @@ export const startTracking = (apiUrl: string, config?: DatatakiConfig): void => 
     throw new Error('Tracelog config error: Invalid sessionTimeout (must be bigger or equal to 30s).');
   }
 
-  if (config?.samplingRate && (config.samplingRate < 0 || config.samplingRate > 1)) {
+  if (typeof config?.samplingRate === 'number' && (config.samplingRate < 0 || config.samplingRate > 1)) {
     throw new Error('Tracelog config error: Invalid samplingRate (must be a number between 0 and 1).');
   }
 

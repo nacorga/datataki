@@ -68,10 +68,8 @@ export type DatatakiEventUtm = {
 
 export type DatatakiEvent = {
   type: EventType;
-  session_id: string;
   page_url: string;
   timestamp: number;
-  device: DeviceType;
   referrer?: string;
   from_page_url?: string;
   scroll_data?: DatatakiEventScrollData;
@@ -82,6 +80,8 @@ export type DatatakiEvent = {
 
 export type DatatakiQueue = {
   user_id: string;
+  session_id: string;
+  device: DeviceType;
   events: DatatakiEvent[];
   debug_mode?: boolean;
 };

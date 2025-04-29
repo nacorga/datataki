@@ -131,10 +131,8 @@ All events include:
 ```javascript
 {
   type: EventType;
-  session_id: string;
   page_url: string;
   timestamp: number;
-  device: DeviceType;
   // Event specific data...
 }
 ```
@@ -169,6 +167,64 @@ window.addEventListener('DatatakiEvent', (e: CustomEvent) => {
 });
 ```
 
+## Batch Processing
+
+Events are collected in a queue and sent in batches every 10 seconds to optimize network usage and reduce server load. The batch includes:
+
+- User and session identification
+- Device type
+- All queued events
+- Global metadata (if configured)
+- Debug mode flag (if enabled)
+
+The batch is sent using the Beacon API, which ensures reliable delivery even when the page is being closed or the browser is navigating away.
+
+Example of a batch payload:
+```json
+{
+  "user_id": "550e8400-e29b-41d4-a716-446655440000",
+  "session_id": "550e8400-e29b-41d4-a716-446655440000-1234567890",
+  "device": "desktop",
+  "events": [
+    {
+      "type": "page_view",
+      "page_url": "https://example.com/products",
+      "timestamp": 1678901234567,
+      "referrer": "https://google.com"
+    },
+    {
+      "type": "click",
+      "page_url": "https://example.com/products",
+      "timestamp": 1678901234568,
+      "click_data": {
+        "element": "button",
+        "x": 100,
+        "y": 200,
+        "attrData": {
+          "name": "add_to_cart",
+          "value": "product_123"
+        }
+      }
+    },
+    {
+      "type": "custom",
+      "page_url": "https://example.com/products",
+      "timestamp": 1678901234569,
+      "custom_event": {
+        "name": "product_view",
+        "metadata": {
+          "productId": "123",
+          "category": "electronics",
+          "price": 99.99
+        }
+      }
+    }
+  ],
+  "appVersion": "1.0.1",
+  "environment": "production"
+}
+```
+
 ## Debug Mode
 
 Enable debug mode to log events to console:
@@ -200,10 +256,8 @@ All collected data is anonymous:
 ```javascript
 {
   type: EventType;
-  session_id: string; // randomly generated
   page_url: string; // without query params containing PII
   timestamp: number;
-  device: DeviceType;
   // Event specific anonymous data
 }
 ```

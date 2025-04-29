@@ -298,12 +298,9 @@ export class Tracking {
     const isFirstEvent = evType === EventType.SESSION_START;
 
     const payload: DatatakiEvent = {
-      ...this.config.globalMetadata,
       type: evType,
-      session_id: this.sessionId,
       page_url: url || this.pageUrl,
       timestamp: Date.now(),
-      device: this.device,
       ...(isFirstEvent && { referrer: document.referrer || 'Direct' }),
       ...(fromUrl && { from_page_url: fromUrl }),
       ...(scrollData && { scroll_data: scrollData }),
@@ -359,7 +356,10 @@ export class Tracking {
     this.eventsQueue = uniqueEvents;
 
     const body: DatatakiQueue = {
+      ...this.config.globalMetadata,
       user_id: this.userId,
+      session_id: this.sessionId,
+      device: this.device,
       events: this.eventsQueue,
       ...(this.config.debug && { debug_mode: true }),
     };
