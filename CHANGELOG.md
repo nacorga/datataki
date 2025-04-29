@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### 1.1.1 (2025-04-29)
+
+
+### 📄 Docs (Documentation)
+
+* update README ([7bdae79](https://github.com/nacorga/datataki/commit/7bdae793d6d473bd4761708ec332c974c666e3eb))
+
 ## 1.1.0 (2025-04-29)
 
 
