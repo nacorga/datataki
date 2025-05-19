@@ -218,13 +218,18 @@ export class Tracking {
         }
       }
 
-      let attrData: DatatakiEventClickAttrData | undefined;
-
       if (hasDataAttr) {
         const name = htmlElRef.getAttribute(`${HTML_DATA_ATTR_PREFIX}-name`)!;
         const value = htmlElRef.getAttribute(`${HTML_DATA_ATTR_PREFIX}-value`);
+        const attrData: DatatakiEventClickAttrData = { name, ...(value && { value }) };
 
-        attrData = { name, ...(value && { value }) };
+        this.handleEvent({
+          evType: EventType.CUSTOM,
+          customEvent: {
+            name: attrData.name,
+            ...(attrData.value && { metadata: { value: attrData.value } }),
+          },
+        });
       }
 
       const clickData: DatatakiEventClickData = {
@@ -233,7 +238,6 @@ export class Tracking {
         y: event.clientY,
         ...(htmlElRef.id && { id: htmlElRef.id }),
         ...(htmlElRef.className && { class: htmlElRef.className }),
-        ...(attrData && { attrData }),
       };
 
       this.handleEvent({
@@ -245,6 +249,7 @@ export class Tracking {
 
     window.addEventListener('click', handleClick, true);
   }
+
   private handleEvent({ evType, url, fromUrl, scrollData, clickData, customEvent }: DatatakiEventHandler) {
     if (Object.keys(this.config.globalMetadata || {}).length) {
       const { valid, error } = isValidMetadata('globalMetadata', this.config.globalMetadata || {});

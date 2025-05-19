@@ -81,27 +81,47 @@ Datataki automatically tracks these events:
 - `SCROLL`: Records scroll depth and direction
 - `CLICK`: Captures click events with element details
 
-## Click Tracking with Data Attributes
+### Click Events
 
-Add custom data to click events using data attributes:
+Datataki tracks clicks in two ways:
+
+#### 1. Basic Click Events
+Every click on your website is automatically tracked with basic information:
+
+```javascript
+{
+  element: 'button', // HTML element type
+  x: number, // X coordinate
+  y: number, // Y coordinate
+  id?: 'signup_btn', // Element ID (if present)
+  class?: 'btn' // Element class (if present)
+}
+```
+
+#### 2. Custom Click Events
+To send a custom event when clicking an element, add the `data-taki-name` attribute. You can also include `data-taki-value` to add additional metadata:
 
 ```html
+<!-- Basic usage -->
+<button data-taki-name="signup_button">Sign Up</button>
+
+<!-- With additional metadata -->
 <button 
   data-taki-name="signup_button"
   data-taki-value="premium_plan">
-  Sign Up
+  Sign Up Premium
 </button>
 ```
 
-The click event will include:
+When clicking these buttons, Datataki will:
+1. Send the basic click event (as shown above)
+2. Send a custom event with:
+
 ```javascript
-click_data: {
-  element: 'button',
-  x: number,
-  y: number,
-  attrData: {
-    name: 'signup_button',
-    value: 'premium_plan'
+{
+  name: 'signup_button',
+  metadata: {
+    value: 'premium_plan' // Only included if data-taki-value is present
   }
 }
 ```
