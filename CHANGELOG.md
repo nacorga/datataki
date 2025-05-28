@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### 1.2.1 (2025-05-28)
+
+
+### 🐛 Bug Fixes
+
+* replace error throws with console errors for better handling in startTracking and sendCustomEvent functions ([de91046](https://github.com/nacorga/datataki/commit/de91046241a13110e3379ce46643a1cf96bff8cf))
+
 ## 1.2.0 (2025-05-28)
 
 
