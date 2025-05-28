@@ -46,11 +46,12 @@ export type DatatakiEventScrollData = {
 
 export type DatatakiEventClickData = {
   element: string;
-  x?: number;
-  y?: number;
-  id?: string | undefined;
-  class?: string | undefined;
-  attrData?: DatatakiEventClickAttrData;
+  x: number;
+  y: number;
+  relX: number;
+  relY: number;
+  id?: string;
+  class?: string;
 };
 
 export type DatatakiEventClickAttrData = {
@@ -84,4 +85,5 @@ export type DatatakiQueue = {
   device: DeviceType;
   events: DatatakiEvent[];
   debug_mode?: boolean;
+  global_metadata?: Record<string, MetadataType>;
 };

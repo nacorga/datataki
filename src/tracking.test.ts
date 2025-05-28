@@ -122,7 +122,9 @@ describe('Tracking', () => {
 
       tracking.sendCustomEvent('', invalidMetadata);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Invalid custom event'));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('sendCustomEvent "" data object validation failed: sendCustomEvent name is required.'),
+      );
 
       consoleErrorSpy.mockRestore();
     });

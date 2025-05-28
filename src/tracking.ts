@@ -28,6 +28,7 @@ export class Tracking {
   private config: DatatakiConfig;
   private userId: string;
   private sessionId: string;
+  private globalMetadata: Record<string, MetadataType> | undefined;
   private utmParams: DatatakiEventUtm | null;
   private pageUrl: string = '';
   private isInactive: boolean = false;
@@ -51,19 +52,7 @@ export class Tracking {
   sendCustomEvent(name: string, metadata?: Record<string, MetadataType>) {
     const { valid, error } = isEventValid(name, metadata);
 
-    if (!valid) {
-      if (this.config.debug) {
-        const message =
-          error ||
-          `sendCustomEvent "${name}" metadata error: data object validation failed. Please, review your event data and try again.`;
-
-        console.error(`Invalid custom event: ${message}`);
-      }
-
-      return;
-    }
-
-    try {
+    if (valid) {
       this.handleEvent({
         evType: EventType.CUSTOM,
         customEvent: {
@@ -71,10 +60,10 @@ export class Tracking {
           ...(metadata && { metadata }),
         },
       });
-    } catch (err) {
-      if (this.config.debug) {
-        console.error(`Invalid custom event: ${(err as Error).message}`);
-      }
+    } else if (this.config!.debug) {
+      console.error(
+        `sendCustomEvent "${name}" data object validation failed: ${error || 'unknown error'}. Please, review your event data and try again.`,
+      );
     }
   }
 
@@ -98,6 +87,18 @@ export class Tracking {
   private init() {
     if (this.config.debug) {
       console.warn('Datataki debug mode enabled. Remember disable it on production.');
+    }
+
+    if (Object.keys(this.config!.globalMetadata || {}).length) {
+      const { valid, error } = isValidMetadata('globalMetadata', this.config!.globalMetadata || {});
+
+      if (valid) {
+        this.globalMetadata = this.config!.globalMetadata;
+      } else if (this.config!.debug) {
+        console.error(
+          `globalMetadata object validation failed: ${error || 'unknown error'}. Please, review your data and try again.`,
+        );
+      }
     }
 
     this.pageUrl = window.location.href;
@@ -218,6 +219,12 @@ export class Tracking {
         }
       }
 
+      const rect = htmlElRef.getBoundingClientRect();
+      const X = event.clientX;
+      const Y = event.clientY;
+      const relX = (X - rect.left) / rect.width;
+      const relY = (Y - rect.top) / rect.height;
+
       if (hasDataAttr) {
         const name = htmlElRef.getAttribute(`${HTML_DATA_ATTR_PREFIX}-name`)!;
         const value = htmlElRef.getAttribute(`${HTML_DATA_ATTR_PREFIX}-value`);
@@ -234,8 +241,10 @@ export class Tracking {
 
       const clickData: DatatakiEventClickData = {
         element: htmlElRef.tagName.toLowerCase(),
-        x: event.clientX,
-        y: event.clientY,
+        x: X,
+        y: Y,
+        relX,
+        relY,
         ...(htmlElRef.id && { id: htmlElRef.id }),
         ...(htmlElRef.className && { class: htmlElRef.className }),
       };
@@ -251,30 +260,11 @@ export class Tracking {
   }
 
   private handleEvent({ evType, url, fromUrl, scrollData, clickData, customEvent }: DatatakiEventHandler) {
-    if (Object.keys(this.config.globalMetadata || {}).length) {
-      const { valid, error } = isValidMetadata('globalMetadata', this.config.globalMetadata || {});
-
-      if (!valid) {
-        if (this.config.debug) {
-          const message =
-            error ||
-            'globalMetadata metadata error: data object validation failed. Please, review your event data and try again.';
-
-          console.error(`Invalid custom event: ${message}`);
-        }
-
-        return;
-      }
-    }
-
     if (!this.isSampledUser()) {
       return;
     }
 
-    const isScrollEvent = evType === EventType.SCROLL;
-    const isClickEventWithAttrData = evType === EventType.CLICK && clickData?.attrData?.name;
-
-    if (this.isRouteExcluded() && (isScrollEvent || !isClickEventWithAttrData)) {
+    if (this.isRouteExcluded() && [EventType.CLICK, EventType.SCROLL].includes(evType)) {
       return;
     }
 
@@ -361,12 +351,12 @@ export class Tracking {
     this.eventsQueue = uniqueEvents;
 
     const body: DatatakiQueue = {
-      ...this.config.globalMetadata,
       user_id: this.userId,
       session_id: this.sessionId,
       device: this.device,
       events: this.eventsQueue,
       ...(this.config.debug && { debug_mode: true }),
+      ...(this.globalMetadata && { global_metadata: this.globalMetadata }),
     };
 
     const isSendBeaconSuccess = this.collectEventsQueue(body);
@@ -399,17 +389,14 @@ export class Tracking {
   }
 
   private isInactiveHandler(isInactive: boolean) {
-    if (isInactive) {
-      if (!this.hasEndedSession) {
-        this.handleEvent({ evType: EventType.SESSION_END });
-        this.hasEndedSession = true;
-      }
-    } else {
-      if (this.hasEndedSession) {
-        this.sessionId = this.createId();
-        this.handleEvent({ evType: EventType.SESSION_START });
-        this.hasEndedSession = false;
-      }
+    if (isInactive && !this.hasEndedSession) {
+      this.handleEvent({ evType: EventType.SESSION_END });
+      this.hasEndedSession = true;
+    }
+
+    if (!isInactive && this.hasEndedSession) {
+      this.handleEvent({ evType: EventType.SESSION_START });
+      this.hasEndedSession = false;
     }
   }
 

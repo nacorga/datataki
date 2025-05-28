@@ -35,6 +35,13 @@ const isOnlyPrimitiveFields = (obj: Record<string, any>): obj is Record<string, 
 };
 
 export const isEventValid = (evName: string, metadata?: Record<string, any>): { valid: boolean; error?: string } => {
+  if (!evName) {
+    return {
+      valid: false,
+      error: `sendCustomEvent name is required.`,
+    };
+  }
+
   if (evName.length > MAX_CUSTOM_EVENT_NAME_LENGTH) {
     return {
       valid: false,

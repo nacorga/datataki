@@ -59,14 +59,45 @@ The `startTracking` function accepts these configuration options:
 interface DatatakiConfig {
   debug?: boolean; // Enable console logging
   realTime?: boolean; // Enable real-time event dispatching
-  sessionTimeout?: number; // Inactivity timeout in ms (default: 15m)
-  samplingRate?: number; // Allow to track only a percentage of users (default 100%)
+  sessionTimeout?: number; // Inactivity timeout in ms (default: 15m, minimum: 30s)
+  samplingRate?: number; // Allow to track only a percentage of users (default: 1, range: 0-1)
   excludeRoutes?: Array<string | RegExp>; // List of routes (exact string or RegExp) on which we do NOT want to trace
   globalMetadata?: Record<string, string | number | boolean | string[]>; // Include global metadata to be sent with all events
 }
 ```
 
-* `excludeRoutes` only will ignore **scroll** events and **click** events without _data-taki-*_ attribute.
+### Configuration Validation
+
+The library performs the following validations on configuration:
+
+- `sessionTimeout` must be at least 30 seconds
+- `samplingRate` must be a number between 0 and 1
+- `globalMetadata` is validated for each event (max 12 keys, max 10KB size)
+
+### Route Exclusion
+
+The `excludeRoutes` option allows you to specify routes where certain events should not be tracked:
+
+```javascript
+startTracking('YOUR_API_URL', {
+  excludeRoutes: [
+    '/admin', // Exact path match
+    /^\/private/, // Regex pattern match
+    '/dashboard/*' // Wildcard pattern
+  ]
+});
+```
+
+When a route is excluded:
+- Scroll events are not tracked
+- Click events are not tracked
+- Other events (page views, custom events, session events) are still tracked
+- Routes can be specified as exact strings or RegExp patterns
+
+This is useful for:
+- Excluding admin/private areas from analytics
+- Reducing noise in high-traffic areas
+- Complying with privacy requirements for sensitive pages
 
 ## Automatic Events
 
@@ -138,12 +169,26 @@ sendCustomEvent('purchase_completed', {
 });
 ```
 
-Metadata restrictions:
+### Event Validation
+
+The library performs strict validation on custom events:
+
 - Event name: max 120 characters
 - Metadata object: max 10KB
 - Max 12 metadata keys
 - Arrays: max 12 items
 - Valid types: string, number, boolean, string[]
+- Invalid events will be logged to console in debug mode
+
+Example of valid metadata:
+```javascript
+{
+  productId: '123', // string
+  price: 99.99, // number
+  isAvailable: true, // boolean
+  tags: ['electronics', 'phones'] // string[]
+}
+```
 
 ## Event Payload
 
@@ -177,15 +222,27 @@ These are included in the `SESSION_START` event.
 
 ## Real-time Events
 
-Enable real-time event dispatching:
+Enable real-time event dispatching by setting `realTime: true` in the configuration:
 
 ```javascript
-startTracking('YOUR_API_URL', { realTime: true });
+startTracking('YOUR_API_URL', { 
+  realTime: true,
+  debug: true // Optional: enables console logging of events
+});
 
+// Listen for real-time events
 window.addEventListener('DatatakiEvent', (e: CustomEvent) => {
-  console.log(e.detail.event);
+  const event = e.detail.event;
+  console.log('Real-time event:', event);
 });
 ```
+
+Real-time events are dispatched immediately when they occur, in addition to being queued for batch processing. This is useful for:
+- Debugging and development
+- Real-time analytics dashboards
+- Immediate user interaction feedback
+
+Note: Real-time events are dispatched in the same format as batch events, maintaining consistency in your event handling.
 
 ## Batch Processing
 
