@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## 1.2.0 (2025-05-28)
+
+
+### ✨ Features
+
+* add global metadata handling and improve event validation error messages ([21a6b9b](https://github.com/nacorga/datataki/commit/21a6b9bc0427f19fe4c49e560e802e3bf2685f50))
+
 ### 1.1.2 (2025-05-19)
 
 
