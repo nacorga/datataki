@@ -401,6 +401,10 @@ export class Tracking {
   }
 
   private collectEventsQueue(body: DatatakiQueue): boolean {
+    if (this.apiUrl === 'demo') {
+      return true;
+    }
+
     const blob = new Blob([JSON.stringify(body)], { type: 'application/json' });
 
     return navigator.sendBeacon(this.apiUrl, blob);
