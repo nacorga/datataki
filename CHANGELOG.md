@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### 1.2.2 (2025-05-30)
+
+
+### 🐛 Bug Fixes
+
+* generate sessionId on session start after has ended session ([98a17e4](https://github.com/nacorga/datataki/commit/98a17e4479f3acce151fdb51a32e7024a62750fe))
+
 ### 1.2.1 (2025-05-28)
 
 

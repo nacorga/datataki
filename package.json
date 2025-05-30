@@ -1,6 +1,6 @@
 {
   "name": "@datataki/sdk",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "license": "MIT",
   "description": "A lightweight client-side event tracking library for modern web applications. Track user sessions, page views, interactions and custom events with minimal setup.",
   "keywords": [
