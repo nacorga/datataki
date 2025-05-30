@@ -395,6 +395,7 @@ export class Tracking {
     }
 
     if (!isInactive && this.hasEndedSession) {
+      this.sessionId = this.createId();
       this.handleEvent({ evType: EventType.SESSION_START });
       this.hasEndedSession = false;
     }
