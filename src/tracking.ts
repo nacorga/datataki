@@ -389,6 +389,8 @@ export class Tracking {
   }
 
   private isInactiveHandler(isInactive: boolean) {
+    this.isInactive = isInactive;
+
     if (isInactive && !this.hasEndedSession) {
       this.handleEvent({ evType: EventType.SESSION_END });
       this.hasEndedSession = true;
