@@ -167,4 +167,56 @@ describe('Tracking', () => {
       expect(window.addEventListener).toHaveBeenCalledWith('click', expect.any(Function));
     });
   });
+
+  describe('excludeRoutes with wildcard', () => {
+    it('should ignore click events on excluded wildcard routes', () => {
+      mockWindow.location.href = 'https://example.com/dashboard/home';
+      tracking = new Tracking(mockApiUrl, { debug: true, excludeRoutes: ['/dashboard/*'] });
+
+      const clickEvent = new MouseEvent('click', { clientX: 50, clientY: 50 });
+
+      window.dispatchEvent(clickEvent);
+
+      jest.advanceTimersByTime(EVENT_SENT_INTERVAL);
+
+      const lastCall = (mockNavigator.sendBeacon as jest.Mock).mock.calls[0];
+
+      const reader = new FileReader();
+      reader.readAsText(lastCall[1]);
+
+      return new Promise<void>((resolve) => {
+        reader.onload = () => {
+          const sentData = JSON.parse(reader.result as string);
+          const clickEvents = sentData.events.filter((e: any) => e.type === EventType.CLICK);
+          expect(clickEvents.length).toBe(0);
+          resolve();
+        };
+      });
+    });
+
+    it('should track click events when wildcard route does not match', () => {
+      mockWindow.location.href = 'https://example.com/profile';
+      tracking = new Tracking(mockApiUrl, { debug: true, excludeRoutes: ['/dashboard/*'] });
+
+      const clickEvent = new MouseEvent('click', { clientX: 60, clientY: 60 });
+
+      window.dispatchEvent(clickEvent);
+
+      jest.advanceTimersByTime(EVENT_SENT_INTERVAL);
+
+      const lastCall = (mockNavigator.sendBeacon as jest.Mock).mock.calls[0];
+
+      const reader = new FileReader();
+      reader.readAsText(lastCall[1]);
+
+      return new Promise<void>((resolve) => {
+        reader.onload = () => {
+          const sentData = JSON.parse(reader.result as string);
+          const clickEvents = sentData.events.filter((e: any) => e.type === EventType.CLICK);
+          expect(clickEvents.length).toBeGreaterThan(0);
+          resolve();
+        };
+      });
+    });
+  });
 });

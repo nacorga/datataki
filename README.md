@@ -34,7 +34,7 @@ startTracking('YOUR_API_URL', {
   debug: false,
   realTime: true,
   sessionTimeout: 1800000,
-  excludeRoutes: [/^\/admin/, '/login'],
+  excludeRoutes: [/^\/admin/, '/login', '/dashboard/*'],
   samplingRate: 0.5,
   globalMetadata: {
     appVersion: '1.0.1',
@@ -61,7 +61,7 @@ interface DatatakiConfig {
   realTime?: boolean; // Enable real-time event dispatching
   sessionTimeout?: number; // Inactivity timeout in ms (default: 15m, minimum: 30s)
   samplingRate?: number; // Allow to track only a percentage of users (default: 1, range: 0-1)
-  excludeRoutes?: Array<string | RegExp>; // List of routes (exact string or RegExp) on which we do NOT want to trace
+  excludeRoutes?: Array<string | RegExp>; // Routes to ignore (exact strings, wildcard patterns or RegExp)
   globalMetadata?: Record<string, string | number | boolean | string[]>; // Include global metadata to be sent with all events
 }
 ```
@@ -92,7 +92,7 @@ When a route is excluded:
 - Scroll events are not tracked
 - Click events are not tracked
 - Other events (page views, custom events, session events) are still tracked
-- Routes can be specified as exact strings or RegExp patterns
+- Routes can be specified as exact strings, wildcard patterns (e.g. `/dashboard/*`) or RegExp objects
 
 This is useful for:
 - Excluding admin/private areas from analytics

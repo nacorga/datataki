@@ -428,9 +428,20 @@ export class Tracking {
 
     const path = new URL(this.pageUrl, window.location.origin).pathname;
 
-    return this.config.excludeRoutes.some((pattern) =>
-      pattern instanceof RegExp ? pattern.test(path) : pattern === path,
-    );
+    return this.config.excludeRoutes.some((pattern) => {
+      if (pattern instanceof RegExp) {
+        return pattern.test(path);
+      }
+
+      if (pattern.includes('*')) {
+        const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+        const regex = new RegExp(`^${escaped}$`);
+
+        return regex.test(path);
+      }
+
+      return pattern === path;
+    });
   }
 
   private getUserId(): string {
