@@ -291,4 +291,53 @@ describe('Tracking', () => {
       });
     });
   });
+
+  describe('collectEventsQueue', () => {
+    let originalNavigator: Navigator;
+    let originalFetch: any;
+
+    beforeEach(() => {
+      originalNavigator = window.navigator;
+      Object.defineProperty(window, 'navigator', { value: {} as Navigator, configurable: true });
+      originalFetch = (global as any).fetch;
+    });
+
+    afterEach(() => {
+      Object.defineProperty(window, 'navigator', { value: originalNavigator });
+      (global as any).fetch = originalFetch;
+    });
+
+    it('should return true when fetch status is 200', async () => {
+      (global as any).fetch = jest.fn().mockResolvedValue({ status: 200 });
+
+      const tracking = new Tracking(mockApiUrl);
+      const body = {
+        user_id: 'u',
+        session_id: 's',
+        device: 'desktop',
+        events: [],
+      } as any;
+
+      // @ts-ignore - accessing private method for testing
+      const result = await tracking.collectEventsQueue(body);
+
+      expect(result).toBe(true);
+    });
+
+    it('should trigger retry when fetch status is 500', async () => {
+      (global as any).fetch = jest.fn().mockResolvedValue({ status: 500 });
+
+      const tracking = new Tracking(mockApiUrl);
+
+      tracking.sendCustomEvent('fail');
+
+      // @ts-ignore - accessing private method for testing
+      await tracking.sendEventsQueue();
+
+      // @ts-ignore - accessing private property for testing
+      expect(tracking.retryTimeoutId).not.toBeNull();
+      // @ts-ignore - events should remain in the queue
+      expect(tracking.eventsQueue.length).toBeGreaterThan(0);
+    });
+  });
 });

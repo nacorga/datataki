@@ -453,14 +453,14 @@ export class Tracking {
     }
 
     try {
-      await fetch(this.apiUrl as string, {
+      const response = await fetch(this.apiUrl as string, {
         method: 'POST',
         body: blob,
         keepalive: true,
         headers: { 'Content-Type': 'application/json' },
       });
 
-      return true;
+      return response.status >= 200 && response.status < 300;
     } catch (err) {
       if (this.config?.debug) {
         console.error('Datataki error: failed to send events queue', err);
