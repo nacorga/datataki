@@ -195,8 +195,11 @@ export class Tracking {
         const scrollTop = window.scrollY;
         const viewportHeight = window.innerHeight;
         const pageHeight = document.documentElement.scrollHeight;
-        const scrollDepth = Math.min(100, Math.max(0, Math.floor((scrollTop / (pageHeight - viewportHeight)) * 100)));
         const direction = scrollTop > lastScrollTop ? ScrollDirection.DOWN : ScrollDirection.UP;
+        const scrollDepth =
+          pageHeight > viewportHeight
+            ? Math.min(100, Math.max(0, Math.floor((scrollTop / (pageHeight - viewportHeight)) * 100)))
+            : 0;
 
         lastScrollTop = scrollTop;
 
