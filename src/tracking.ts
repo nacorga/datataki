@@ -351,7 +351,7 @@ export class Tracking {
     }, EVENT_SENT_INTERVAL);
   }
 
-  private sendEventsQueue() {
+  private async sendEventsQueue() {
     const uniqueEvents = this.eventsQueue.reduce((acc: DatatakiEvent[], current) => {
       const isDuplicate = acc.some(({ timestamp, type }) => timestamp === current.timestamp && type === current.type);
 
@@ -373,7 +373,7 @@ export class Tracking {
       ...(this.globalMetadata && { global_metadata: this.globalMetadata }),
     };
 
-    const isSendBeaconSuccess = this.collectEventsQueue(body);
+    const isSendBeaconSuccess = await this.collectEventsQueue(body);
 
     if (isSendBeaconSuccess) {
       this.eventsQueue = [];
@@ -417,7 +417,7 @@ export class Tracking {
     }
   }
 
-  private collectEventsQueue(body: DatatakiQueue): boolean {
+  private async collectEventsQueue(body: DatatakiQueue): Promise<boolean> {
     if (this.apiUrl === 'demo') {
       return true;
     }
@@ -433,7 +433,7 @@ export class Tracking {
     }
 
     try {
-      fetch(this.apiUrl as string, {
+      await fetch(this.apiUrl as string, {
         method: 'POST',
         body: blob,
         keepalive: true,
