@@ -34,6 +34,73 @@ const isOnlyPrimitiveFields = (obj: Record<string, any>): obj is Record<string, 
   return true;
 };
 
+const validateSizeLimits = (
+  metadata: Record<string, MetadataType>,
+  intro: string,
+): { valid: boolean; error?: string } => {
+  let size = 2;
+  let keyCount = 0;
+  let first = true;
+
+  for (const key in metadata) {
+    if (!Object.prototype.hasOwnProperty.call(metadata, key)) {
+      continue;
+    }
+
+    keyCount += 1;
+
+    if (keyCount > MAX_CUSTOM_EVENT_KEYS) {
+      return {
+        valid: false,
+        error: `${intro}: object has too many keys (max ${MAX_CUSTOM_EVENT_KEYS} keys).`,
+      };
+    }
+
+    if (!first) {
+      size += 1;
+    }
+
+    first = false;
+    size += key.length + 3;
+
+    const value = metadata[key];
+
+    if (Array.isArray(value)) {
+      if (value.length > MAX_CUSTOM_EVENT_ARRAY_SIZE) {
+        return {
+          valid: false,
+          error: `${intro}: object has a too large array prop (max ${MAX_CUSTOM_EVENT_ARRAY_SIZE} length).`,
+        };
+      }
+
+      size += 2;
+
+      value.forEach((item, idx) => {
+        if (idx) {
+          size += 1;
+        }
+
+        size += item.length + 2;
+      });
+    } else if (typeof value === 'string') {
+      size += value.length + 2;
+    } else {
+      size += String(value).length;
+    }
+
+    if (size > MAX_CUSTOM_EVENT_STRING_SIZE) {
+      return {
+        valid: false,
+        error: `${intro}: object is too large (max ${MAX_CUSTOM_EVENT_STRING_SIZE / 1024} KB).`,
+      };
+    }
+  }
+
+  return {
+    valid: true,
+  };
+};
+
 export const isEventValid = (evName: string, metadata?: Record<string, any>): { valid: boolean; error?: string } => {
   if (!evName) {
     return {
@@ -72,6 +139,12 @@ export const isValidMetadata = (
     };
   }
 
+  const sizeCheck = validateSizeLimits(metadata, intro);
+
+  if (!sizeCheck.valid) {
+    return sizeCheck;
+  }
+
   let jsonString: string;
 
   try {
@@ -87,20 +160,6 @@ export const isValidMetadata = (
     return {
       valid: false,
       error: `${intro}: object is too large (max ${MAX_CUSTOM_EVENT_STRING_SIZE / 1024} KB).`,
-    };
-  }
-
-  if (Object.keys(metadata).length > MAX_CUSTOM_EVENT_KEYS) {
-    return {
-      valid: false,
-      error: `${intro}: object has too many keys (max ${MAX_CUSTOM_EVENT_KEYS} keys).`,
-    };
-  }
-
-  if (Object.values(metadata).some((value) => Array.isArray(value) && value.length > MAX_CUSTOM_EVENT_ARRAY_SIZE)) {
-    return {
-      valid: false,
-      error: `${intro}: object has a too large array prop (max ${MAX_CUSTOM_EVENT_ARRAY_SIZE} length).`,
     };
   }
 

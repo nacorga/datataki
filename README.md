@@ -74,7 +74,7 @@ The library performs the following validations on configuration:
 
 - `sessionTimeout` must be at least 30 seconds
 - `samplingRate` must be a number between 0 and 1
-- `globalMetadata` is validated for each event (max 12 keys, max 10KB size)
+- `globalMetadata` is validated for each event (max 12 keys, max 10KB size, early size check)
 
 ### Route Exclusion
 
@@ -215,6 +215,7 @@ The library performs strict validation on custom events:
 - Max 12 metadata keys
 - Arrays: max 12 items
 - Valid types: string, number, boolean, string[]
+- Objects are size-checked during traversal before serialization
 - Invalid events will be logged to console in debug mode
 
 Example of valid metadata:
