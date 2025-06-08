@@ -335,7 +335,11 @@ export class Tracking {
     }
 
     if (this.config.realTime) {
-      window.dispatchEvent(new CustomEvent(DispatchEventKey.Event, { detail: { event: payload } }));
+      const eventName = this.config.realTimeNamespace
+        ? `${DispatchEventKey.Event}:${this.config.realTimeNamespace}`
+        : DispatchEventKey.Event;
+
+      window.dispatchEvent(new CustomEvent(eventName, { detail: { event: payload } }));
     }
 
     this.eventsQueue.push(payload);

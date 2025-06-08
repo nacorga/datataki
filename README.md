@@ -35,6 +35,7 @@ import { startTracking, sendCustomEvent } from '@datataki/sdk';
 startTracking('YOUR_API_URL', {
   debug: false,
   realTime: true,
+  realTimeNamespace: 'analytics',
   sessionTimeout: 1800000,
   excludeRoutes: ['/admin/*', '/login'],
   samplingRate: 0.5,
@@ -60,7 +61,8 @@ The `startTracking` function accepts these configuration options:
 ```javascript
 interface DatatakiConfig {
   debug?: boolean; // Enable console logging
-  realTime?: boolean; // Enable real-time event dispatching
+  realTime?: boolean; // Enable real-time event dispatching (events exposed to all scripts)
+  realTimeNamespace?: string; // Custom namespace for real-time events
   sessionTimeout?: number; // Inactivity timeout in ms (default: 15m, minimum: 30s)
   samplingRate?: number; // Allow to track only a percentage of users (default: 1, range: 0-1)
   excludeRoutes?: Array<string | RegExp>; // List of routes (exact, wildcard with *, or RegExp) not to track
@@ -284,13 +286,19 @@ Events are collected in a queue and sent in batches every 10 seconds to optimize
 ```
 
 ### Real-time Events
-When `realTime: true` is enabled, events are also dispatched immediately through a custom event:
+When `realTime: true` is enabled, events are also dispatched immediately through a custom event. **This exposes event data to any script running on the page.** To limit who can listen, provide a `realTimeNamespace` so events are dispatched using a namespaced event name:
 
 ```javascript
-window.addEventListener('DatatakiEvent', (e: CustomEvent) => {
+window.addEventListener('DatatakiEvent:analytics', (e: CustomEvent) => {
   const event = e.detail.event;
   console.log('Real-time event:', event);
 });
+```
+
+Set the namespace when initializing:
+
+```javascript
+startTracking('YOUR_API_URL', { realTime: true, realTimeNamespace: 'analytics' });
 ```
 
 ### Error Handling
