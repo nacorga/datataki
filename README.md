@@ -147,7 +147,9 @@ Datataki automatically tracks these events:
   - Includes UTM parameters if present
   - Includes referrer information
   - Includes device type
-- `SESSION_END`: When session ends due to inactivity/page close
+- `SESSION_END`: When session ends due to inactivity or page close
+
+After the configured `sessionTimeout` elapses, a `SESSION_END` event is fired. The next interaction starts a new session with a new session ID, while the user ID stored in `localStorage` remains to link sessions from the same visitor.
 
 ### Page Events
 - `PAGE_VIEW`: On initial load and navigation changes
@@ -317,7 +319,7 @@ startTracking('YOUR_API_URL', { realTime: true, realTimeNamespace: 'analytics' }
 - Events are batched to reduce network requests
 - Sampling rate support to reduce data volume
 - Route exclusion for privacy-sensitive areas
-- Automatic cleanup of old sessions
+- Sessions automatically end after inactivity while the user ID remains stored in `localStorage`
 
 ## License
 

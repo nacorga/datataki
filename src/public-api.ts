@@ -35,7 +35,15 @@ export const startTracking = (apiUrl: string, config?: DatatakiConfig): void => 
     return;
   }
 
-  trackingInstance = new Tracking(apiUrl, config);
+  const instance = new Tracking(apiUrl, config);
+
+  if (!instance.isInitialized) {
+    console.error('Datataki error: Tracking initialization failed. Provide a valid apiUrl and try again.');
+
+    return;
+  }
+
+  trackingInstance = instance;
 };
 
 export const sendCustomEvent = (name: string, metadata?: Record<string, MetadataType>): void => {
