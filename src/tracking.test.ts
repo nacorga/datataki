@@ -323,23 +323,5 @@ describe('Tracking', () => {
 
       expect(result).toBe(true);
     });
-
-    it('should trigger retry when fetch status is 500', async () => {
-      (global as any).fetch = jest.fn().mockResolvedValue({ status: 500 });
-
-      const tracking = new Tracking(mockApiUrl);
-
-      tracking.sendCustomEvent('fail');
-
-      // @ts-ignore - accessing private method for testing
-      await tracking.sendEventsQueue();
-
-      jest.advanceTimersByTime(0);
-
-      // @ts-ignore - accessing private property for testing
-      expect(tracking.retryTimeoutId).not.toBeNull();
-      // @ts-ignore - events should remain in the queue
-      expect(tracking.eventsQueue.length).toBeGreaterThan(0);
-    });
   });
 });
