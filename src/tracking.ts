@@ -24,22 +24,36 @@ import { getDeviceType } from './utils/device-detector';
 import { isEventValid, isValidMetadata } from './utils/event-check';
 
 export class Tracking {
-  private apiUrl: string;
-  private config: DatatakiConfig;
-  private userId: string;
-  private sessionId: string;
+  isInitialized: boolean = false;
+
+  private apiUrl: string | null = null;
+  private config: DatatakiConfig = {};
+  private userId: string | null = null;
+  private tempUserId: string | null = null;
+  private sessionId: string | null = null;
   private globalMetadata: Record<string, MetadataType> | undefined;
-  private utmParams: DatatakiEventUtm | null;
+  private utmParams: DatatakiEventUtm | null = null;
   private pageUrl: string = '';
   private isInactive: boolean = false;
   private hasEndedSession: boolean = false;
   private eventsQueue: DatatakiEvent[] = [];
   private hasInitEventsQueueInterval: boolean = false;
   private eventsQueueIntervalId: number | null = null;
-  private device: DeviceType;
+  private device: DeviceType | null = null;
   private suppressNextScroll = false;
 
   constructor(apiUrl: string, config: DatatakiConfig = {}) {
+    if (!this.validateApiUrl(apiUrl) && apiUrl !== 'demo') {
+      if (config.debug) {
+        console.error('Datataki error: Invalid API URL provided. Please provide a valid URL or use "demo" mode.');
+      }
+
+      this.isInitialized = false;
+
+      return;
+    }
+
+    this.isInitialized = true;
     this.apiUrl = apiUrl;
     this.config = { ...DEFAULT_TRACKING_CONFIG, ...config };
     this.userId = this.getUserId();
@@ -60,9 +74,9 @@ export class Tracking {
           ...(metadata && { metadata }),
         },
       });
-    } else if (this.config!.debug) {
+    } else if (this.config?.debug) {
       console.error(
-        `sendCustomEvent "${name}" data object validation failed: ${error || 'unknown error'}. Please, review your event data and try again.`,
+        `Datataki error: sendCustomEvent "${name}" data object validation failed: ${error || 'unknown error'}. Please, review your event data and try again.`,
       );
     }
   }
@@ -96,7 +110,7 @@ export class Tracking {
         this.globalMetadata = this.config!.globalMetadata;
       } else if (this.config!.debug) {
         console.error(
-          `globalMetadata object validation failed: ${error || 'unknown error'}. Please, review your data and try again.`,
+          `Datataki error: globalMetadata object validation failed: ${error || 'unknown error'}. Please, review your data and try again.`,
         );
       }
     }
@@ -222,8 +236,8 @@ export class Tracking {
       const rect = htmlElRef.getBoundingClientRect();
       const X = event.clientX;
       const Y = event.clientY;
-      const relX = (X - rect.left) / rect.width;
-      const relY = (Y - rect.top) / rect.height;
+      const relX = rect.width > 0 ? (X - rect.left) / rect.width : 0;
+      const relY = rect.height > 0 ? (Y - rect.top) / rect.height : 0;
 
       if (hasDataAttr) {
         const name = htmlElRef.getAttribute(`${HTML_DATA_ATTR_PREFIX}-name`)!;
@@ -284,13 +298,13 @@ export class Tracking {
 
     if (errorMessage) {
       if (this.config.debug) {
-        console.error(errorMessage);
+        console.error(`Datataki error: ${errorMessage}`);
       }
 
       return;
     }
 
-    const isFirstEvent = evType === EventType.SESSION_START;
+    const isFirstEvent = evType === EventType.SESSION_START && !this.hasEndedSession;
 
     const payload: DatatakiEvent = {
       type: evType,
@@ -351,9 +365,9 @@ export class Tracking {
     this.eventsQueue = uniqueEvents;
 
     const body: DatatakiQueue = {
-      user_id: this.userId,
-      session_id: this.sessionId,
-      device: this.device,
+      user_id: this.userId as string,
+      session_id: this.sessionId as string,
+      device: this.device as DeviceType,
       events: this.eventsQueue,
       ...(this.config.debug && { debug_mode: true }),
       ...(this.globalMetadata && { global_metadata: this.globalMetadata }),
@@ -376,7 +390,7 @@ export class Tracking {
 
     setTimeout(() => {
       this.suppressNextScroll = false;
-    }, SCROLL_DEBOUNCE_TIME + 10);
+    }, SCROLL_DEBOUNCE_TIME * 2);
   }
 
   private handleHistoryStateChange(method: any) {
@@ -389,6 +403,8 @@ export class Tracking {
   }
 
   private isInactiveHandler(isInactive: boolean) {
+    this.isInactive = isInactive;
+
     if (isInactive && !this.hasEndedSession) {
       this.handleEvent({ evType: EventType.SESSION_END });
       this.hasEndedSession = true;
@@ -408,7 +424,30 @@ export class Tracking {
 
     const blob = new Blob([JSON.stringify(body)], { type: 'application/json' });
 
-    return navigator.sendBeacon(this.apiUrl, blob);
+    if (navigator.sendBeacon) {
+      const ok = navigator.sendBeacon(this.apiUrl as string, blob);
+
+      if (ok) {
+        return true;
+      }
+    }
+
+    try {
+      fetch(this.apiUrl as string, {
+        method: 'POST',
+        body: blob,
+        keepalive: true,
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      return true;
+    } catch (err) {
+      if (this.config?.debug) {
+        console.error('Datataki error: failed to send events queue', err);
+      }
+
+      return false;
+    }
   }
 
   private isSampledUser(): boolean {
@@ -416,7 +455,7 @@ export class Tracking {
       return true;
     }
 
-    const userIdHash = parseInt(this.userId.slice(-6), 16) / 0xffffff;
+    const userIdHash = parseInt(this.userId!.slice(-6), 16) / 0xffffff;
 
     return userIdHash < (this.config.samplingRate || 1);
   }
@@ -434,17 +473,29 @@ export class Tracking {
   }
 
   private getUserId(): string {
-    const storedId = localStorage.getItem(LSKey.UserId);
+    try {
+      const storedId = window.localStorage.getItem(LSKey.UserId);
 
-    if (storedId) {
-      return storedId;
+      if (storedId) {
+        return storedId;
+      }
+
+      const newId = this.createId();
+
+      window.localStorage.setItem(LSKey.UserId, newId);
+
+      return newId;
+    } catch (_) {
+      if (this.tempUserId) {
+        return this.tempUserId;
+      }
+
+      const newId = this.createId();
+
+      this.tempUserId = newId;
+
+      return newId;
     }
-
-    const newId = this.createId();
-
-    localStorage.setItem(LSKey.UserId, newId);
-
-    return newId;
   }
 
   private createId() {
@@ -459,5 +510,14 @@ export class Tracking {
       '-' +
       timestamp.toString(16)
     );
+  }
+
+  private validateApiUrl(url: string): boolean {
+    try {
+      new URL(url);
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 }
