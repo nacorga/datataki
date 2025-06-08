@@ -7,10 +7,10 @@ describe('startTracking', () => {
   });
 
   it('should not persist instance when initialization fails', () => {
-    startTracking('invalid-url');
+    startTracking('invalid-url', { debug: true });
 
     expect(console.error).toHaveBeenCalledWith(
-      'Datataki error: Tracking initialization failed. Provide a valid apiUrl and try again.',
+      'Datataki error: Invalid API URL provided. Please provide a valid URL or use "demo" mode.',
     );
 
     (console.error as jest.Mock).mockClear();

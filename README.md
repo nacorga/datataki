@@ -13,10 +13,10 @@ A lightweight client-side event tracking library for web applications. Track use
 - ✨ Custom events support
 - 📱 Device type detection
 - 🔍 UTM parameter tracking
-- ⚡ Real-time event dispatching option
-- 🐛 Debug mode
 - 🔒 Privacy-focused (no cookies, local storage only)
 - 📦 Batch processing for optimal performance
+- ⚡ Real-time event dispatching option
+- 🐛 Debug mode
 
 ## Installation
 

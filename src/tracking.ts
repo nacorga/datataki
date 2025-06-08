@@ -35,6 +35,7 @@ export class Tracking {
   private tempUserId: string | null = null;
   private sessionId: string | null = null;
   private globalMetadata: Record<string, MetadataType> | undefined;
+  private device: DeviceType | null = null;
   private utmParams: DatatakiEventUtm | null = null;
   private pageUrl: string = '';
   private isInactive: boolean = false;
@@ -44,15 +45,10 @@ export class Tracking {
   private eventsQueueIntervalId: number | null = null;
   private retryDelay: number = RETRY_BACKOFF_INITIAL;
   private retryTimeoutId: number | null = null;
-  private device: DeviceType | null = null;
   private suppressNextScroll = false;
 
   constructor(apiUrl: string, config: DatatakiConfig = {}) {
     if (!this.validateApiUrl(apiUrl) && apiUrl !== 'demo') {
-      if (config.debug) {
-        console.error('Datataki error: Invalid API URL provided. Please provide a valid URL or use "demo" mode.');
-      }
-
       this.isInitialized = false;
 
       return;
