@@ -517,8 +517,9 @@ export class Tracking {
 
   private validateApiUrl(url: string): boolean {
     try {
-      new URL(url);
-      return true;
+      const parsed = new URL(url);
+
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
     } catch (error) {
       return false;
     }
