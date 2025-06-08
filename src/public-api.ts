@@ -46,17 +46,26 @@ export const startTracking = (apiUrl: string, config?: DatatakiConfig): void => 
     return;
   }
 
-  const instance = new Tracking(apiUrl, config);
+  try {
+    const instance = new Tracking(apiUrl, config);
 
-  if (!instance.isInitialized) {
-    if (isDebugMode) {
-      console.error('Datataki error: Invalid API URL provided. Please provide a valid URL or use "demo" mode.');
+    if (!instance.isInitialized) {
+      if (isDebugMode) {
+        console.error('Datataki error: Invalid API URL provided. Please provide a valid URL or use "demo" mode.');
+      }
+
+      return;
     }
 
-    return;
+    trackingInstance = instance;
+  } catch (error) {
+    if (isDebugMode) {
+      console.error(
+        'Datataki error: Unexpected error initializing tracking.',
+        error instanceof Error ? error.message : 'Unknown error',
+      );
+    }
   }
-
-  trackingInstance = instance;
 };
 
 export const sendCustomEvent = (name: string, metadata?: Record<string, MetadataType>): void => {
@@ -76,5 +85,14 @@ export const sendCustomEvent = (name: string, metadata?: Record<string, Metadata
     return;
   }
 
-  trackingInstance.sendCustomEvent(name, metadata);
+  try {
+    trackingInstance.sendCustomEvent(name, metadata);
+  } catch (error) {
+    if (isDebugMode) {
+      console.error(
+        'Datataki error: Unexpected error sending custom event.',
+        error instanceof Error ? error.message : 'Unknown error',
+      );
+    }
+  }
 };
