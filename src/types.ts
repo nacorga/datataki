@@ -19,6 +19,7 @@ export enum ScrollDirection {
 export type DatatakiConfig = {
   debug?: boolean;
   realTime?: boolean;
+  realTimeNamespace?: string;
   sessionTimeout?: number;
   excludeRoutes?: Array<string | RegExp>;
   samplingRate?: number;

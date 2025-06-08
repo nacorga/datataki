@@ -50,12 +50,20 @@ Object.defineProperty(window, 'navigator', { value: mockNavigator });
 describe('Tracking', () => {
   let tracking: Tracking;
 
-  const mockApiUrl = 'https://api.example.com/track';
+  const mockApiUrl = 'https://api.example.com';
 
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
-    tracking = new Tracking(mockApiUrl, { debug: true });
+    // Mock window.location
+    Object.defineProperty(window, 'location', {
+      value: {
+        href: 'https://example.com/test',
+        origin: 'https://example.com',
+      },
+      writable: true,
+    });
+    tracking = new Tracking(mockApiUrl);
   });
 
   afterEach(() => {
@@ -120,7 +128,9 @@ describe('Tracking', () => {
         invalidProp: { nested: 'object' } as unknown as MetadataType,
       };
 
-      tracking.sendCustomEvent('', invalidMetadata);
+      // Instancia con debug: true
+      const trackingDebug = new Tracking(mockApiUrl, { debug: true });
+      trackingDebug.sendCustomEvent('', invalidMetadata);
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         expect.stringContaining('sendCustomEvent "" data object validation failed: sendCustomEvent name is required.'),
@@ -165,6 +175,169 @@ describe('Tracking', () => {
       jest.advanceTimersByTime(1000);
 
       expect(window.addEventListener).toHaveBeenCalledWith('click', expect.any(Function));
+    });
+  });
+
+  describe('isRouteExcluded', () => {
+    it('should return false when no excludeRoutes are configured', () => {
+      // @ts-ignore - accessing private method for testing
+      expect(tracking.isRouteExcluded()).toBe(false);
+    });
+
+    it('should return true for exact path match', () => {
+      const tracking = new Tracking(mockApiUrl, {
+        excludeRoutes: ['/test'],
+      });
+      // @ts-ignore - accessing private method for testing
+      expect(tracking.isRouteExcluded()).toBe(true);
+    });
+
+    it('should return true for regex pattern match', () => {
+      const tracking = new Tracking(mockApiUrl, {
+        excludeRoutes: [/^\/t.*/],
+      });
+      // @ts-ignore - accessing private method for testing
+      expect(tracking.isRouteExcluded()).toBe(true);
+    });
+
+    it('should return true for wildcard pattern match', () => {
+      Object.defineProperty(window, 'location', {
+        value: {
+          href: 'https://example.com/dashboard/123',
+          origin: 'https://example.com',
+        },
+        writable: true,
+      });
+      const tracking = new Tracking(mockApiUrl, {
+        excludeRoutes: ['/dashboard/*'],
+      });
+      // @ts-ignore - accessing private method for testing
+      expect(tracking.isRouteExcluded()).toBe(true);
+    });
+
+    it('should return false when path does not match any exclude pattern', () => {
+      const tracking = new Tracking(mockApiUrl, {
+        excludeRoutes: ['/admin', /^\/private/],
+      });
+      // @ts-ignore - accessing private method for testing
+      expect(tracking.isRouteExcluded()).toBe(false);
+    });
+
+    it('should handle multiple exclude patterns', () => {
+      const tracking = new Tracking(mockApiUrl, {
+        excludeRoutes: ['/admin', '/test', /^\/private/],
+      });
+      // @ts-ignore - accessing private method for testing
+      expect(tracking.isRouteExcluded()).toBe(true);
+    });
+
+    it('should handle empty excludeRoutes array', () => {
+      const tracking = new Tracking(mockApiUrl, {
+        excludeRoutes: [],
+      });
+      // @ts-ignore - accessing private method for testing
+      expect(tracking.isRouteExcluded()).toBe(false);
+    });
+
+    it('should handle different URL paths', () => {
+      // Test with a different path
+      Object.defineProperty(window, 'location', {
+        value: {
+          href: 'https://example.com/admin',
+          origin: 'https://example.com',
+        },
+        writable: true,
+      });
+
+      const tracking = new Tracking(mockApiUrl, {
+        excludeRoutes: ['/admin'],
+      });
+      // @ts-ignore - accessing private method for testing
+      expect(tracking.isRouteExcluded()).toBe(true);
+    });
+  });
+
+  describe('isRouteExcluded - visual examples', () => {
+    const cases = [
+      { path: '/admin', excludeRoutes: ['/admin'], expected: true, desc: 'Exact match' },
+      { path: '/admin/settings', excludeRoutes: ['/admin'], expected: false, desc: 'Does not match exactly' },
+      { path: '/private', excludeRoutes: [/^\/private/], expected: true, desc: 'Regex: starts with /private' },
+      { path: '/private/area', excludeRoutes: [/^\/private/], expected: true, desc: 'Regex: subroute of /private' },
+      { path: '/dashboard', excludeRoutes: ['/admin', '/login'], expected: false, desc: 'Not in the list' },
+      { path: '/login', excludeRoutes: ['/admin', '/login'], expected: true, desc: 'Matches /login' },
+      {
+        path: '/dashboard/123',
+        excludeRoutes: ['/dashboard/*'],
+        expected: true,
+        desc: 'Wildcard /* matches subroutes of /dashboard',
+      },
+      { path: '/test', excludeRoutes: [/^\/t.*/], expected: true, desc: 'Regex: any route starting with /t' },
+      { path: '/taki', excludeRoutes: [/^\/t.*/], expected: true, desc: 'Regex: /taki is also excluded' },
+      { path: '/user', excludeRoutes: [/^\/t.*/], expected: false, desc: 'Does not match regex' },
+    ];
+
+    cases.forEach(({ path, excludeRoutes, expected, desc }) => {
+      it(`Route "${path}" with excludeRoutes=${JSON.stringify(excludeRoutes)} → excluded: ${expected} (${desc})`, () => {
+        Object.defineProperty(window, 'location', {
+          value: {
+            href: `https://example.com${path}`,
+            origin: 'https://example.com',
+          },
+          writable: true,
+        });
+        const tracking = new Tracking('https://api.example.com', { excludeRoutes });
+        // @ts-ignore
+        expect(tracking.isRouteExcluded()).toBe(expected);
+      });
+    });
+  });
+
+  describe('collectEventsQueue', () => {
+    let originalNavigator: Navigator;
+    let originalFetch: any;
+
+    beforeEach(() => {
+      originalNavigator = window.navigator;
+      Object.defineProperty(window, 'navigator', { value: {} as Navigator, configurable: true });
+      originalFetch = (global as any).fetch;
+    });
+
+    afterEach(() => {
+      Object.defineProperty(window, 'navigator', { value: originalNavigator });
+      (global as any).fetch = originalFetch;
+    });
+
+    it('should return true when fetch status is 200', async () => {
+      (global as any).fetch = jest.fn().mockResolvedValue({ status: 200 });
+
+      const tracking = new Tracking(mockApiUrl);
+      const body = {
+        user_id: 'u',
+        session_id: 's',
+        device: 'desktop',
+        events: [],
+      } as any;
+
+      // @ts-ignore - accessing private method for testing
+      const result = await tracking.collectEventsQueue(body);
+
+      expect(result).toBe(true);
+    });
+
+    it('should trigger retry when fetch status is 500', async () => {
+      (global as any).fetch = jest.fn().mockResolvedValue({ status: 500 });
+
+      const tracking = new Tracking(mockApiUrl);
+
+      tracking.sendCustomEvent('fail');
+
+      // @ts-ignore - accessing private method for testing
+      await tracking.sendEventsQueue();
+
+      // @ts-ignore - accessing private property for testing
+      expect(tracking.retryTimeoutId).not.toBeNull();
+      // @ts-ignore - events should remain in the queue
+      expect(tracking.eventsQueue.length).toBeGreaterThan(0);
     });
   });
 });

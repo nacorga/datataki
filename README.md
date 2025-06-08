@@ -13,6 +13,8 @@ A lightweight client-side event tracking library for web applications. Track use
 - ✨ Custom events support
 - 📱 Device type detection
 - 🔍 UTM parameter tracking
+- 🔒 Privacy-focused (no cookies, local storage only)
+- 📦 Batch processing for optimal performance
 - ⚡ Real-time event dispatching option
 - 🐛 Debug mode
 
@@ -33,8 +35,9 @@ import { startTracking, sendCustomEvent } from '@datataki/sdk';
 startTracking('YOUR_API_URL', {
   debug: false,
   realTime: true,
+  realTimeNamespace: 'analytics',
   sessionTimeout: 1800000,
-  excludeRoutes: [/^\/admin/, '/login'],
+  excludeRoutes: ['/admin/*', '/login'],
   samplingRate: 0.5,
   globalMetadata: {
     appVersion: '1.0.1',
@@ -58,10 +61,11 @@ The `startTracking` function accepts these configuration options:
 ```javascript
 interface DatatakiConfig {
   debug?: boolean; // Enable console logging
-  realTime?: boolean; // Enable real-time event dispatching
+  realTime?: boolean; // Enable real-time event dispatching (events exposed to all scripts)
+  realTimeNamespace?: string; // Custom namespace for real-time events
   sessionTimeout?: number; // Inactivity timeout in ms (default: 15m, minimum: 30s)
   samplingRate?: number; // Allow to track only a percentage of users (default: 1, range: 0-1)
-  excludeRoutes?: Array<string | RegExp>; // List of routes (exact string or RegExp) on which we do NOT want to trace
+  excludeRoutes?: Array<string | RegExp>; // List of routes (exact, wildcard with *, or RegExp) not to track
   globalMetadata?: Record<string, string | number | boolean | string[]>; // Include global metadata to be sent with all events
 }
 ```
@@ -72,7 +76,7 @@ The library performs the following validations on configuration:
 
 - `sessionTimeout` must be at least 30 seconds
 - `samplingRate` must be a number between 0 and 1
-- `globalMetadata` is validated for each event (max 12 keys, max 10KB size)
+- `globalMetadata` is validated for each event (max 12 keys, max 10KB size, early size check)
 
 ### Route Exclusion
 
@@ -83,7 +87,6 @@ startTracking('YOUR_API_URL', {
   excludeRoutes: [
     '/admin', // Exact path match
     /^\/private/, // Regex pattern match
-    '/dashboard/*' // Wildcard pattern
   ]
 });
 ```
@@ -92,7 +95,43 @@ When a route is excluded:
 - Scroll events are not tracked
 - Click events are not tracked
 - Other events (page views, custom events, session events) are still tracked
-- Routes can be specified as exact strings or RegExp patterns
+
+#### Route Exclusion Behavior
+
+The library supports three types of route exclusion patterns:
+
+1. **Exact String Match**
+   ```javascript
+   excludeRoutes: ['/admin', '/login']
+   ```
+   - `/admin` → excluded
+   - `/admin/settings` → not excluded (doesn't match exactly)
+   - `/login` → excluded
+
+2. **Wildcard String Match**
+   ```javascript
+   excludeRoutes: ['/admin/*', '/account/*/settings']
+   ```
+   - `/admin` → excluded
+   - `/admin/settings` → excluded
+   - `/account/123/settings` → excluded
+   - `/account/123/profile` → not excluded
+
+3. **Regular Expression Match**
+   ```javascript
+   excludeRoutes: [/^\/private/, /^\/t.*/]
+   ```
+   - `/private` → excluded
+   - `/private/area` → excluded (matches regex)
+   - `/test` → excluded (matches /^\/t.*/)
+   - `/taki` → excluded (matches /^\/t.*/)
+   - `/user` → not excluded (doesn't match regex)
+
+Important notes:
+- Wildcards using `*` are supported in string patterns
+- Routes are matched against the pathname only (query parameters are ignored)
+- The matching is case-sensitive
+- Empty array or undefined means no routes are excluded
 
 This is useful for:
 - Excluding admin/private areas from analytics
@@ -105,12 +144,23 @@ Datataki automatically tracks these events:
 
 ### Session Events
 - `SESSION_START`: When a new session begins
-- `SESSION_END`: When session ends due to inactivity/page close
+  - Includes UTM parameters if present
+  - Includes referrer information
+  - Includes device type
+- `SESSION_END`: When session ends due to inactivity or page close
+
+After the configured `sessionTimeout` elapses, a `SESSION_END` event is fired. The next interaction starts a new session with a new session ID, while the user ID stored in `localStorage` remains to link sessions from the same visitor.
 
 ### Page Events
 - `PAGE_VIEW`: On initial load and navigation changes
+  - Tracks both direct navigation and history API changes
+  - Includes previous page URL when navigating
 - `SCROLL`: Records scroll depth and direction
+  - Debounced to prevent excessive events
+  - Includes relative position (0-100%)
 - `CLICK`: Captures click events with element details
+  - Includes relative coordinates within element
+  - Supports custom data attributes
 
 ### Click Events
 
@@ -178,6 +228,7 @@ The library performs strict validation on custom events:
 - Max 12 metadata keys
 - Arrays: max 12 items
 - Valid types: string, number, boolean, string[]
+- Objects are size-checked during traversal before serialization
 - Invalid events will be logged to console in debug mode
 
 Example of valid metadata:
@@ -220,148 +271,55 @@ The library automatically captures UTM parameters:
 
 These are included in the `SESSION_START` event.
 
-## Real-time Events
+## Event Processing
 
-Enable real-time event dispatching by setting `realTime: true` in the configuration:
+### Batch Processing
+Events are collected in a queue and sent in batches every 10 seconds to optimize network usage and reduce server load. Up to **1000** events are kept in the queue; when the limit is exceeded the oldest entries are discarded. The batch includes:
 
 ```javascript
-startTracking('YOUR_API_URL', { 
-  realTime: true,
-  debug: true // Optional: enables console logging of events
-});
+{
+  user_id: string;
+  session_id: string;
+  device: DeviceType;
+  events: DatatakiEvent[];
+  debug_mode?: boolean;
+  global_metadata?: Record<string, MetadataType>;
+}
+```
 
-// Listen for real-time events
-window.addEventListener('DatatakiEvent', (e: CustomEvent) => {
+### Real-time Events
+When `realTime: true` is enabled, events are also dispatched immediately through a custom event. **This exposes event data to any script running on the page.** To limit who can listen, provide a `realTimeNamespace` so events are dispatched using a namespaced event name:
+
+```javascript
+window.addEventListener('DatatakiEvent:analytics', (e: CustomEvent) => {
   const event = e.detail.event;
   console.log('Real-time event:', event);
 });
 ```
 
-Real-time events are dispatched immediately when they occur, in addition to being queued for batch processing. This is useful for:
-- Debugging and development
-- Real-time analytics dashboards
-- Immediate user interaction feedback
-
-Note: Real-time events are dispatched in the same format as batch events, maintaining consistency in your event handling.
-
-## Batch Processing
-
-Events are collected in a queue and sent in batches every 10 seconds to optimize network usage and reduce server load. The batch includes:
-
-- User and session identification
-- Device type
-- All queued events
-- Global metadata (if configured)
-- Debug mode flag (if enabled)
-
-The batch is sent using the Beacon API, which ensures reliable delivery even when the page is being closed or the browser is navigating away.
-
-Example of a batch payload:
-```json
-{
-  "user_id": "550e8400-e29b-41d4-a716-446655440000",
-  "session_id": "550e8400-e29b-41d4-a716-446655440000-1234567890",
-  "device": "desktop",
-  "events": [
-    {
-      "type": "session_start",
-      "page_url": "https://example.com/products",
-      "timestamp": 1678901234566,
-      "referrer": "https://google.com"
-    },
-    {
-      "type": "page_view",
-      "page_url": "https://example.com/products",
-      "timestamp": 1678901234567
-    },
-    {
-      "type": "click",
-      "page_url": "https://example.com/products",
-      "timestamp": 1678901234568,
-      "click_data": {
-        "element": "button",
-        "x": 100,
-        "y": 200,
-        "attrData": {
-          "name": "add_to_cart",
-          "value": "product_123"
-        }
-      }
-    },
-    {
-      "type": "custom",
-      "page_url": "https://example.com/products",
-      "timestamp": 1678901234569,
-      "custom_event": {
-        "name": "product_view",
-        "metadata": {
-          "productId": "123",
-          "category": "electronics",
-          "price": 99.99
-        }
-      }
-    }
-  ],
-  "appVersion": "1.0.1",
-  "environment": "production"
-}
-```
-
-## Debug Mode
-
-Enable debug mode to log events to console:
+Set the namespace when initializing:
 
 ```javascript
-startTracking('YOUR_API_URL', { debug: true });
+startTracking('YOUR_API_URL', { realTime: true, realTimeNamespace: 'analytics' });
 ```
+
+### Error Handling
+- Invalid events are logged to console in debug mode.
+- Failed event submissions are retried in the next batch. When multiple failures occur the retry delay increases exponentially up to one minute.
+- Network errors are handled gracefully with fallback to fetch if sendBeacon fails.
 
 ## Browser Support
+- Modern browsers with ES6+ support
+- Requires localStorage API
+- Uses modern APIs like sendBeacon with fetch fallback
+- No IE11 support
 
-Requires browsers with support for:
-- localStorage
-- Beacon API
-- CustomEvent
-- matchMedia
-
-## Privacy & Data Collection
-
-Datataki is designed with privacy in mind:
-
-### Anonymous by Design
-- No collection of personal identifiable information (PII)
-- Random session IDs that cannot be linked to individuals
-- No IP address tracking
-- No cookies used
-
-### Data Collection
-All collected data is anonymous:
-```javascript
-{
-  type: EventType;
-  page_url: string; // without query params containing PII
-  timestamp: number;
-  // Event specific anonymous data
-}
-```
-
-### Custom Events
-When sending custom events, ensure no PII is included:
-
-```javascript
-// Good ✅
-sendCustomEvent('button_click', {
-  buttonId: 'submit-form',
-  category: 'navigation',
-  isValid: true
-});
-
-// Bad ❌
-sendCustomEvent('form_submit', {
-  email: 'user@email.com', // No PII!
-  name: 'John Doe', // No PII!
-  userId: '12345' // No PII!
-});
-```
+## Privacy & Performance
+- No cookies used, only localStorage for user identification
+- Events are batched to reduce network requests
+- Sampling rate support to reduce data volume
+- Route exclusion for privacy-sensitive areas
+- Sessions automatically end after inactivity while the user ID remains stored in `localStorage`
 
 ## License
 
