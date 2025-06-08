@@ -261,7 +261,7 @@ These are included in the `SESSION_START` event.
 ## Event Processing
 
 ### Batch Processing
-Events are collected in a queue and sent in batches every 10 seconds to optimize network usage and reduce server load. The batch includes:
+Events are collected in a queue and sent in batches every 10 seconds to optimize network usage and reduce server load. Up to **1000** events are kept in the queue; when the limit is exceeded the oldest entries are discarded. The batch includes:
 
 ```javascript
 {
@@ -285,9 +285,9 @@ window.addEventListener('DatatakiEvent', (e: CustomEvent) => {
 ```
 
 ### Error Handling
-- Invalid events are logged to console in debug mode
-- Failed event submissions are retried in the next batch
-- Network errors are handled gracefully with fallback to fetch if sendBeacon fails
+- Invalid events are logged to console in debug mode.
+- Failed event submissions are retried in the next batch. When multiple failures occur the retry delay increases exponentially up to one minute.
+- Network errors are handled gracefully with fallback to fetch if sendBeacon fails.
 
 ## Browser Support
 - Modern browsers with ES6+ support

@@ -5,6 +5,9 @@ import {
   EVENT_SENT_INTERVAL,
   HTML_DATA_ATTR_PREFIX,
   LSKey,
+  MAX_EVENTS_QUEUE_LENGTH,
+  RETRY_BACKOFF_INITIAL,
+  RETRY_BACKOFF_MAX,
   SCROLL_DEBOUNCE_TIME,
   UTM_PARAMS,
 } from './constants';
@@ -39,6 +42,8 @@ export class Tracking {
   private eventsQueue: DatatakiEvent[] = [];
   private hasInitEventsQueueInterval: boolean = false;
   private eventsQueueIntervalId: number | null = null;
+  private retryDelay: number = RETRY_BACKOFF_INITIAL;
+  private retryTimeoutId: number | null = null;
   private device: DeviceType | null = null;
   private suppressNextScroll = false;
 
@@ -335,6 +340,10 @@ export class Tracking {
 
     this.eventsQueue.push(payload);
 
+    if (this.eventsQueue.length > MAX_EVENTS_QUEUE_LENGTH) {
+      this.eventsQueue.shift();
+    }
+
     if (!this.hasInitEventsQueueInterval) {
       this.initEventsQueueInterval();
     }
@@ -380,6 +389,14 @@ export class Tracking {
 
     if (isSendBeaconSuccess) {
       this.eventsQueue = [];
+      this.retryDelay = RETRY_BACKOFF_INITIAL;
+
+      if (this.retryTimeoutId !== null) {
+        clearTimeout(this.retryTimeoutId);
+        this.retryTimeoutId = null;
+      }
+    } else {
+      this.scheduleRetry();
     }
   }
 
@@ -451,6 +468,19 @@ export class Tracking {
 
       return false;
     }
+  }
+
+  private scheduleRetry() {
+    if (this.retryTimeoutId !== null) {
+      return;
+    }
+
+    this.retryTimeoutId = window.setTimeout(() => {
+      this.retryTimeoutId = null;
+      this.sendEventsQueue();
+    }, this.retryDelay);
+
+    this.retryDelay = Math.min(this.retryDelay * 2, RETRY_BACKOFF_MAX);
   }
 
   private isSampledUser(): boolean {
