@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### 1.2.3 (2025-06-08)
+
+
+### 🧪 Test (Testing)
+
+* remove redundant test for retry logic on fetch status 500 in tracking tests ([63bb3f2](https://github.com/nacorga/datataki/commit/63bb3f2ec5a74aea7f5f378d5ea5b93109988301))
+
 ### 1.2.2 (2025-05-30)
 
 
