@@ -36,7 +36,7 @@ startTracking('YOUR_API_URL', {
   debug: false,
   realTime: true,
   sessionTimeout: 1800000,
-  excludeRoutes: [/^\/admin/, '/login'],
+  excludeRoutes: ['/admin/*', '/login'],
   samplingRate: 0.5,
   globalMetadata: {
     appVersion: '1.0.1',
@@ -63,7 +63,7 @@ interface DatatakiConfig {
   realTime?: boolean; // Enable real-time event dispatching
   sessionTimeout?: number; // Inactivity timeout in ms (default: 15m, minimum: 30s)
   samplingRate?: number; // Allow to track only a percentage of users (default: 1, range: 0-1)
-  excludeRoutes?: Array<string | RegExp>; // List of routes (exact string or RegExp) on which we do NOT want to trace
+  excludeRoutes?: Array<string | RegExp>; // List of routes (exact, wildcard with *, or RegExp) not to track
   globalMetadata?: Record<string, string | number | boolean | string[]>; // Include global metadata to be sent with all events
 }
 ```
@@ -96,7 +96,7 @@ When a route is excluded:
 
 #### Route Exclusion Behavior
 
-The library supports two types of route exclusion patterns:
+The library supports three types of route exclusion patterns:
 
 1. **Exact String Match**
    ```javascript
@@ -106,7 +106,16 @@ The library supports two types of route exclusion patterns:
    - `/admin/settings` → not excluded (doesn't match exactly)
    - `/login` → excluded
 
-2. **Regular Expression Match**
+2. **Wildcard String Match**
+   ```javascript
+   excludeRoutes: ['/admin/*', '/account/*/settings']
+   ```
+   - `/admin` → excluded
+   - `/admin/settings` → excluded
+   - `/account/123/settings` → excluded
+   - `/account/123/profile` → not excluded
+
+3. **Regular Expression Match**
    ```javascript
    excludeRoutes: [/^\/private/, /^\/t.*/]
    ```
@@ -117,7 +126,7 @@ The library supports two types of route exclusion patterns:
    - `/user` → not excluded (doesn't match regex)
 
 Important notes:
-- Wildcards like `*` are not supported in string patterns (only in regex)
+- Wildcards using `*` are supported in string patterns
 - Routes are matched against the pathname only (query parameters are ignored)
 - The matching is case-sensitive
 - Empty array or undefined means no routes are excluded

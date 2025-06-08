@@ -200,6 +200,21 @@ describe('Tracking', () => {
       expect(tracking.isRouteExcluded()).toBe(true);
     });
 
+    it('should return true for wildcard pattern match', () => {
+      Object.defineProperty(window, 'location', {
+        value: {
+          href: 'https://example.com/dashboard/123',
+          origin: 'https://example.com',
+        },
+        writable: true,
+      });
+      const tracking = new Tracking(mockApiUrl, {
+        excludeRoutes: ['/dashboard/*'],
+      });
+      // @ts-ignore - accessing private method for testing
+      expect(tracking.isRouteExcluded()).toBe(true);
+    });
+
     it('should return false when path does not match any exclude pattern', () => {
       const tracking = new Tracking(mockApiUrl, {
         excludeRoutes: ['/admin', /^\/private/],
@@ -253,8 +268,8 @@ describe('Tracking', () => {
       {
         path: '/dashboard/123',
         excludeRoutes: ['/dashboard/*'],
-        expected: false,
-        desc: 'Wildcard /* not supported (only exact or regex)',
+        expected: true,
+        desc: 'Wildcard /* matches subroutes of /dashboard',
       },
       { path: '/test', excludeRoutes: [/^\/t.*/], expected: true, desc: 'Regex: any route starting with /t' },
       { path: '/taki', excludeRoutes: [/^\/t.*/], expected: true, desc: 'Regex: /taki is also excluded' },

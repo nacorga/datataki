@@ -500,9 +500,21 @@ export class Tracking {
 
     const path = new URL(this.pageUrl, window.location.origin).pathname;
 
-    return this.config.excludeRoutes.some((pattern) =>
-      pattern instanceof RegExp ? pattern.test(path) : pattern === path,
-    );
+    const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    const wildcardToRegex = (str: string) => new RegExp('^' + str.split('*').map(escapeRegex).join('.*') + '$');
+
+    return this.config.excludeRoutes.some((pattern) => {
+      if (pattern instanceof RegExp) {
+        return pattern.test(path);
+      }
+
+      if (pattern.includes('*')) {
+        return wildcardToRegex(pattern).test(path);
+      }
+
+      return pattern === path;
+    });
   }
 
   private getUserId(): string {
