@@ -334,6 +334,8 @@ describe('Tracking', () => {
       // @ts-ignore - accessing private method for testing
       await tracking.sendEventsQueue();
 
+      jest.advanceTimersByTime(0);
+
       // @ts-ignore - accessing private property for testing
       expect(tracking.retryTimeoutId).not.toBeNull();
       // @ts-ignore - events should remain in the queue
