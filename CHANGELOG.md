@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### 1.2.4 (2025-06-09)
+
+
+### 🐛 Bug Fixes
+
+* round relative coordinates in tracking calculations for improved precision ([d767ea7](https://github.com/nacorga/datataki/commit/d767ea7b3771d7d6ed1647d5c3855c87e82ab066))
+
 ### 1.2.3 (2025-06-08)
 
 
