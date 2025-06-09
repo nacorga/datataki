@@ -240,8 +240,8 @@ export class Tracking {
       const rect = htmlElRef.getBoundingClientRect();
       const X = event.clientX;
       const Y = event.clientY;
-      const relX = rect.width > 0 ? (X - rect.left) / rect.width : 0;
-      const relY = rect.height > 0 ? (Y - rect.top) / rect.height : 0;
+      const relX = rect.width > 0 ? Number(((X - rect.left) / rect.width).toFixed(3)) : 0;
+      const relY = rect.height > 0 ? Number(((Y - rect.top) / rect.height).toFixed(3)) : 0;
 
       if (hasDataAttr) {
         const name = htmlElRef.getAttribute(`${HTML_DATA_ATTR_PREFIX}-name`)!;

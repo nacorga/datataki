@@ -22,8 +22,6 @@ A lightweight client-side event tracking library for web applications. Track use
 
 ```bash
 npm install @datataki/sdk
-# or
-yarn add @datataki/sdk
 ```
 
 ## Quick Start
